@@ -113,8 +113,10 @@ copying upstream code.
   Report any network/authentication limitation separately from fixture success.
 - Initialize the local repository and deliver runnable source, outputs, tests,
   workflow, and documentation. Remote publication depends on working GitHub
-  credentials. The current `gh` login reports an invalid token; do not overwrite
-  credentials or claim that a remote repository exists without verification.
+  credentials. Initial sandbox checks reported an invalid `gh` login; a check
+  outside network isolation subsequently verified the existing credential and
+  successful public and GraphQL generation. Never overwrite credentials or
+  claim that a remote repository exists without verification.
 
 ## Approved scope
 
