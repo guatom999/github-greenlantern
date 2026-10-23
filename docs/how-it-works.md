@@ -32,7 +32,18 @@ flowchart LR
 
 `src/svg.js` draws inactive cells, contribution overlays and symbol overlays. CSS keyframes interpolate the opacity points; it contains no JavaScript or external dependencies. Light/dark palettes are separate SVGs. `prefers-reduced-motion` hides the logo layer and retains original contributions.
 
-`bin/greenlantern.js` assembles the outputs and writes provenance in `calendar.json`; fixture mode never accesses the network. `src/preview.js` creates a portable HTML viewer that pauses/scrubs embedded SVG animations. Tokens never appear in the preview.
+`bin/greenlantern.js` reads options, loads contribution days, builds output files,
+then writes them to disk. Provenance lives in `calendar.json`; fixture mode never
+accesses the network.
+
+The preview source is split by responsibility:
+
+- `src/preview.js` builds the HTML and inserts escaped metadata.
+- `src/preview/styles.css` defines the layout and visual styling.
+- `src/preview/player.js` handles playback, scrubbing, phases and theme selection.
+
+CSS and player code are embedded into the generated `preview.html`, so the
+result remains a single portable file. Tokens never appear in the preview.
 
 ## Grid and symbol
 

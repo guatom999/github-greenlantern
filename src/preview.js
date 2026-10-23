@@ -1,33 +1,107 @@
+import { readFileSync } from 'node:fs';
 import { escapeXml } from './svg.js';
 
-/** A portable local viewer; user data appears only as escaped text, never script. */
+// Assets are kept readable in source, then embedded for a portable HTML file.
+const styles = readFileSync(new URL('./preview/styles.css', import.meta.url), 'utf8');
+const playerScript = readFileSync(new URL('./preview/player.js', import.meta.url), 'utf8');
+
+/** User data appears only as escaped text, never inside the player script. */
 export function renderPreview({ light, dark, closeup, metadata }) {
-  const user = escapeXml(metadata.username);
-  const fixture = metadata.source === 'fixture';
+  const username = escapeXml(metadata.username);
+  const isFixture = metadata.source === 'fixture';
+  const sourceTitle = isFixture
+    ? 'SYNTHETIC DEMO / ข้อมูลตัวอย่าง'
+    : 'LIVE SNAPSHOT / ข้อมูลจาก GitHub';
+  const sourceDescription = isFixture
+    ? 'ไฟในตัวอย่างนี้เป็นข้อมูลจำลองสำหรับดูเอฟเฟกต์ ไม่ใช่สถิติของบัญชีจริง'
+    : `อ่าน ${metadata.dayCount} วันจาก GitHub แล้วสร้างภาพใหม่จากข้อมูลจริง ภาพนี้ไม่เปลี่ยน contribution ของบัญชี`;
+
   return `<!doctype html>
-<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Green Lantern · ${user}</title>
-<style>
-:root{color-scheme:dark;--bg:#080f13;--panel:#0f1a20;--line:#223139;--ink:#e8f1ee;--muted:#8caaa1;--green:#55fa89}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,sans-serif}main{max-width:1120px;margin:0 auto;padding:54px 30px}header{display:flex;justify-content:space-between;gap:20px;align-items:center}.brand{font-size:12px;font-weight:700;letter-spacing:.15em;color:var(--green)}.mark{display:inline-block;width:9px;height:9px;background:var(--green);border-radius:2px;margin-right:10px}.pill{border:1px solid #2b4d3c;border-radius:99px;padding:5px 12px;color:#b7e6c6;font-size:11px;letter-spacing:.08em}h1{font-size:clamp(35px,5vw,58px);line-height:1.08;letter-spacing:-.045em;margin:42px 0 16px;font-weight:650}h1 span{color:var(--green)}.intro{color:var(--muted);margin:0 0 32px;max-width:640px}.stage{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}.bar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:19px 24px;border-bottom:1px solid var(--line)}.user{font-weight:600}.meta{font-size:12px;color:var(--muted)}.viewer{padding:30px 22px 26px;overflow:auto}.viewer svg{display:block;width:100%;min-width:620px;height:auto}.variant[hidden]{display:none}.controls{border-top:1px solid var(--line);padding:20px 24px;display:grid;grid-template-columns:78px 1fr 64px;gap:18px;align-items:center}button,select{font:inherit;color:var(--ink);background:#16262d;border:1px solid #30454b;border-radius:7px;padding:7px 12px;cursor:pointer}button:hover{border-color:var(--green)}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--green);outline-offset:4px}input[type=range]{width:100%;accent-color:var(--green);cursor:pointer}output{font:13px ui-monospace,monospace;text-align:right;color:var(--green)}.phases{display:grid;grid-template-columns:2fr 6fr 2fr 3fr 3fr;padding:0 24px 20px;gap:3px;font-size:10px;color:var(--muted)}.phases span{border-top:2px solid #284136;padding-top:8px}.phases span.active{color:var(--green);border-color:var(--green)}.details{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px}.note{border:1px solid var(--line);border-radius:12px;padding:22px 24px;display:flex;gap:26px;align-items:center}.note svg{width:72px;flex-shrink:0;height:auto}.note p{margin:4px 0;color:var(--muted);font-size:13px}.note h2{font-size:14px;margin:0}footer{display:flex;justify-content:space-between;gap:20px;margin-top:28px;font-size:11px;color:#6b8b80}a{color:var(--green)}@media(max-width:700px){main{padding:28px 16px}.details{grid-template-columns:1fr}.bar{align-items:flex-start}.phases{font-size:9px}footer{flex-direction:column}.controls{gap:10px;padding:18px 14px}}
-</style></head><body><main>
-<header><div class="brand"><span class="mark"></span>GITHUB / GREENLANTERN</div><span class="pill">7 ROWS · 16 SECONDS</span></header>
-<h1>A year of light.<br><span>One symbol.</span></h1>
-<p class="intro">แสงจาก contribution ตลอดปี ค่อย ๆ รวมเป็น Green Lantern ตรงกลางกริดเดิมทั้ง 7 แถว</p>
-<section class="stage" aria-label="Contribution animation player">
-<div class="bar"><div><div class="user">@${user}</div><div class="meta">${escapeXml(metadata.from)} → ${escapeXml(metadata.to)} · ${metadata.weeks} weeks</div></div><label class="meta">Theme <select id="theme" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option></select></label></div>
-<div id="viewer" class="viewer"><div class="variant" data-theme="dark">${dark}</div><div class="variant" data-theme="light" hidden>${light}</div></div>
-<div class="controls"><button id="play" type="button">Pause</button><input id="time" aria-label="Animation time in seconds" type="range" min="0" max="16" step="0.01" value="0"><output id="clock" for="time">0.00 s</output></div>
-<div class="phases"><span data-start="0">CALENDAR</span><span data-start="2">GATHER</span><span data-start="8">IGNITE</span><span data-start="10">LANTERN</span><span data-start="13">RETURN</span></div></section>
-<div class="details"><section class="note">${closeup}<div><h2>Five columns. Seven days.</h2><p>สัญลักษณ์ 5 × 7 ช่องตามภาพอ้างอิง ใช้ไฟ 22 ช่อง อยู่กึ่งกลางปฏิทินตลอดปี</p></div></section><section class="note"><div><h2>${fixture ? 'SYNTHETIC DEMO / ข้อมูลตัวอย่าง' : 'LIVE SNAPSHOT / ข้อมูลจาก GitHub'}</h2><p>${fixture ? 'ไฟในตัวอย่างนี้เป็นข้อมูลจำลองสำหรับดูเอฟเฟกต์ ไม่ใช่สถิติของบัญชีจริง' : `อ่าน ${metadata.dayCount} วันจาก GitHub แล้วสร้างภาพใหม่จากข้อมูลจริง ภาพนี้ไม่เปลี่ยน contribution ของบัญชี`}</p><p>ลากแถบเวลาเพื่อตรวจแต่ละเฟรม หรือกด Play เพื่อดูวนซ้ำ</p><p id="motion" hidden>Reduced motion เปิดอยู่: แสดงปฏิทินแบบภาพนิ่ง</p></div></section></div>
-<footer><span>ORIGINAL IMPLEMENTATION · Inspired by <a href="https://github.com/Platane/snk">Platane/snk</a></span><span>Self-contained SVG · No external assets</span></footer>
-</main><script>
-const viewer=document.getElementById('viewer'),slider=document.getElementById('time'),clock=document.getElementById('clock'),play=document.getElementById('play'),theme=document.getElementById('theme');
-const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let running=!reduced,seconds=0,last=performance.now();
-function sync(){for(const animation of viewer.getAnimations({subtree:true})){animation.pause();animation.currentTime=(seconds%16)*1000;}slider.value=seconds;clock.textContent=seconds.toFixed(2)+' s';const phases=[...document.querySelectorAll('[data-start]')];for(let i=0;i<phases.length;i++)phases[i].classList.toggle('active',seconds>=Number(phases[i].dataset.start)&&(i===phases.length-1||seconds<Number(phases[i+1].dataset.start)));}
-slider.addEventListener('input',()=>{running=false;seconds=Number(slider.value);play.textContent='Play';sync();});
-play.addEventListener('click',()=>{running=!running;last=performance.now();play.textContent=running?'Pause':'Play';});
-theme.addEventListener('change',()=>{for(const variant of viewer.children)variant.hidden=variant.dataset.theme!==theme.value;requestAnimationFrame(sync);});
-if(reduced){document.getElementById('motion').hidden=false;play.disabled=true;slider.disabled=true;play.textContent='Still';}
-function tick(now){if(running)seconds=(seconds+(now-last)/1000)%16;last=now;sync();requestAnimationFrame(tick);}requestAnimationFrame(tick);
-</script></body></html>`;
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Green Lantern · ${username}</title>
+    <style>
+${styles}
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="brand"><span class="mark"></span>GITHUB / GREENLANTERN</div>
+        <span class="pill">7 ROWS · 16 SECONDS</span>
+      </header>
+
+      <h1>A year of light.<br><span>One symbol.</span></h1>
+      <p class="intro">แสงจาก contribution ตลอดปี ค่อย ๆ รวมเป็น Green Lantern ตรงกลางกริดเดิมทั้ง 7 แถว</p>
+
+      <section class="stage" aria-label="Contribution animation player">
+        <div class="bar">
+          <div>
+            <div class="user">@${username}</div>
+            <div class="meta">${escapeXml(metadata.from)} → ${escapeXml(metadata.to)} · ${metadata.weeks} weeks</div>
+          </div>
+          <label class="meta">
+            Theme
+            <select id="theme" aria-label="Theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="viewer" class="viewer">
+          <div class="variant" data-theme="dark">${dark}</div>
+          <div class="variant" data-theme="light" hidden>${light}</div>
+        </div>
+
+        <div class="controls">
+          <button id="play" type="button">Pause</button>
+          <input id="time" aria-label="Animation time in seconds"
+            type="range" min="0" max="16" step="0.01" value="0">
+          <output id="clock" for="time">0.00 s</output>
+        </div>
+
+        <div class="phases">
+          <span data-start="0">CALENDAR</span>
+          <span data-start="2">GATHER</span>
+          <span data-start="8">IGNITE</span>
+          <span data-start="10">LANTERN</span>
+          <span data-start="13">RETURN</span>
+        </div>
+      </section>
+
+      <div class="details">
+        <section class="note">
+          ${closeup}
+          <div>
+            <h2>Five columns. Seven days.</h2>
+            <p>สัญลักษณ์ 5 × 7 ช่องตามภาพอ้างอิง ใช้ไฟ 22 ช่อง อยู่กึ่งกลางปฏิทินตลอดปี</p>
+          </div>
+        </section>
+
+        <section class="note">
+          <div>
+            <h2>${sourceTitle}</h2>
+            <p>${sourceDescription}</p>
+            <p>ลากแถบเวลาเพื่อตรวจแต่ละเฟรม หรือกด Play เพื่อดูวนซ้ำ</p>
+            <p id="motion" hidden>Reduced motion เปิดอยู่: แสดงปฏิทินแบบภาพนิ่ง</p>
+          </div>
+        </section>
+      </div>
+
+      <footer>
+        <span>
+          ORIGINAL IMPLEMENTATION · Inspired by
+          <a href="https://github.com/Platane/snk">Platane/snk</a>
+        </span>
+        <span>Self-contained SVG · No external assets</span>
+      </footer>
+    </main>
+    <script>
+${playerScript}
+    </script>
+  </body>
+</html>`;
 }
