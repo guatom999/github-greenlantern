@@ -1,0 +1,17 @@
+{
+  "name": "github-greenlantern",
+  "version": "1.0.0",
+  "description": "Turn a seven-row GitHub contribution calendar into a glowing Green Lantern animation.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "github-greenlantern": "bin/greenlantern.js" },
+  "exports": "./src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "demo": "node bin/greenlantern.js --user demo --fixture fixtures/demo.json --output examples",
+    "generate": "node bin/greenlantern.js"
+  },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/guatom999/github-greenlantern.git" },
+  "files": ["src", "bin", "fixtures", "action.yml", "README.md", "LICENSE"]
+}
