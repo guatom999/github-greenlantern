@@ -1,0 +1,49 @@
+name: GitHub Green Lantern
+description: Fade a seven-row GitHub contribution calendar into a glowing Green Lantern symbol.
+author: guatom999
+branding:
+  icon: zap
+  color: green
+inputs:
+  github_user_name:
+    description: GitHub username to read
+    required: false
+    default: ${{ github.repository_owner }}
+  github_token:
+    description: GitHub token for GraphQL; pass an empty value to use the public HTML calendar
+    required: false
+    default: ${{ github.token }}
+  output_directory:
+    description: Directory receiving SVGs, preview.html and calendar.json
+    required: false
+    default: dist
+outputs:
+  svg:
+    description: Path to the light-theme animated SVG
+    value: ${{ steps.generate.outputs.svg }}
+  svg_dark:
+    description: Path to the dark-theme animated SVG
+    value: ${{ steps.generate.outputs.svg_dark }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+      with:
+        node-version: '22'
+        package-manager-cache: false
+    - id: generate
+      shell: bash
+      env:
+        GREENLANTERN_USER: ${{ inputs.github_user_name }}
+        GREENLANTERN_OUTPUT: ${{ inputs.output_directory }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/bin/greenlantern.js" --user "$GREENLANTERN_USER" --output "$GREENLANTERN_OUTPUT"
+        node --input-type=module -e '
+          import { appendFileSync } from "node:fs";
+          import { resolve, join } from "node:path";
+          const directory = resolve(process.env.GREENLANTERN_OUTPUT);
+          if (/[\r\n]/.test(directory)) throw new Error("Output directory must not contain newlines");
+          appendFileSync(process.env.GITHUB_OUTPUT, `svg=${join(directory, "greenlantern.svg")}\nsvg_dark=${join(directory, "greenlantern-dark.svg")}\n`);
+        '

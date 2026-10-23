@@ -1,0 +1,74 @@
+name: Generate Green Lantern
+on:
+  schedule:
+    - cron: '17 0 * * *' # Daily at 07:17 Asia/Bangkok
+  workflow_dispatch:
+    inputs:
+      username:
+        description: GitHub username (blank uses the repository owner)
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - src/**
+      - bin/**
+      - action.yml
+      - .github/workflows/generate.yml
+permissions:
+  contents: read
+concurrency:
+  group: greenlantern-output
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./
+        with:
+          github_user_name: ${{ inputs.username || github.repository_owner }}
+          output_directory: dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: greenlantern-assets
+          path: dist/
+          if-no-files-found: error
+          retention-days: 3
+  publish:
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: greenlantern-assets
+          path: generated
+      - name: Publish generated files to the output branch
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          export GIT_TERMINAL_PROMPT=0
+          publication=$(mktemp -d "$RUNNER_TEMP/greenlantern-output.XXXXXX")
+          git init --quiet --initial-branch=output "$publication"
+          git -C "$publication" config user.name 'github-actions[bot]'
+          git -C "$publication" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$publication" remote add origin "https://github.com/$REPOSITORY.git"
+          # GitHub CLI supplies the token through its credential helper, never a URL.
+          gh auth setup-git
+          if git -C "$publication" ls-remote --exit-code --heads origin output > /dev/null; then
+            git -C "$publication" fetch --quiet origin output
+            git -C "$publication" reset --hard FETCH_HEAD
+          fi
+          cp generated/greenlantern.svg generated/greenlantern-dark.svg generated/greenlantern-logo.svg generated/preview.html generated/calendar.json "$publication/"
+          git -C "$publication" add greenlantern.svg greenlantern-dark.svg greenlantern-logo.svg preview.html calendar.json
+          if ! git -C "$publication" diff --cached --quiet; then
+            git -C "$publication" commit --quiet -m 'Update Green Lantern contribution animation'
+            git -C "$publication" push origin HEAD:output
+          fi
