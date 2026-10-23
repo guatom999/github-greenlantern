@@ -1,6 +1,6 @@
 # GitHub Green Lantern Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Generate a seven-row contribution animation that fades inward into the supplied Green Lantern symbol.
 
@@ -44,35 +44,35 @@
 
 **Interfaces:** `normalizeDays(days)` returns the grid above. Days have `{date,level,count?}`. `parseContributionHtml(html)` returns days. `fetchContributions(username,{token,fetchImpl,timeoutMs})` returns `{days,source}`.
 
-- [ ] Write `test/calendar.test.js` and `test/github.test.js`: Saturday/Sunday column change, leap day, duplicate/invalid dates, levels outside 0–4, HTML attribute reordering, no cells, 404/429, GraphQL error/null-user, aborted requests, and no token leakage.
-- [ ] Run `node --test test/calendar.test.js test/github.test.js`; expect module-not-found failure.
-- [ ] Implement the three interfaces, username validation, bounded fetch timeout, strict API shape checking, and actionable errors without raw response/token output.
-- [ ] Run the same tests; expect all passing.
-- [ ] Commit data acquisition and normalization.
+- [x] Write `test/calendar.test.js` and `test/github.test.js`: Saturday/Sunday column change, leap day, duplicate/invalid dates, levels outside 0–4, HTML attribute reordering, no cells, 404/429, GraphQL error/null-user, aborted requests, and no token leakage.
+- [x] Run `node --test test/calendar.test.js test/github.test.js`; expect module-not-found failure.
+- [x] Implement the three interfaces, username validation, bounded fetch timeout, strict API shape checking, and actionable errors without raw response/token output.
+- [x] Run the same tests; expect all passing.
+- [x] Commit data acquisition and normalization.
 
 ### Task 2: Timeline and SVG renderer
 
 **Interfaces:** `logoCells(width)` returns 22 `{x,y}` positions. `sourceOpacity(cell,width,time)`, `logoOpacity(index,time)`, and `sampleFrame(grid,time)` share timing with the renderer. `renderSvg(grid,{username,theme,mode})` supports `animated`, `logo`, and `calendar`.
 
-- [ ] Write `test/animation.test.js`, `test/svg.test.js`: exact 5×7 mask, all-zero grid, initial/final/reset frames, outside-in timing, finite opacity, exactly width×7 base cells, deterministic SVG, escaping, no scripts/remote dependencies, reduced-motion behavior, both palettes.
-- [ ] Run `node --test test/animation.test.js test/svg.test.js`; expect failure before implementation.
-- [ ] Implement deterministic timing functions and SVG layers: inactive grid, original contribution overlay, center symbol overlay. Generate CSS keyframes from the same timing helpers. Keep the SVG viewBox to seven rows plus small pixel padding.
-- [ ] Run all tests; expect passing.
-- [ ] Commit timeline and SVG renderer.
+- [x] Write `test/animation.test.js`, `test/svg.test.js`: exact 5×7 mask, all-zero grid, initial/final/reset frames, outside-in timing, finite opacity, exactly width×7 base cells, deterministic SVG, escaping, no scripts/remote dependencies, reduced-motion behavior, both palettes.
+- [x] Run `node --test test/animation.test.js test/svg.test.js`; expect failure before implementation.
+- [x] Implement deterministic timing functions and SVG layers: inactive grid, original contribution overlay, center symbol overlay. Generate CSS keyframes from the same timing helpers. Keep the SVG viewBox to seven rows plus small pixel padding.
+- [x] Run all tests; expect passing.
+- [x] Commit timeline and SVG renderer.
 
 ### Task 3: CLI, preview, workflow, and delivery
 
 **Interfaces:** `node bin/greenlantern.js --user NAME [--fixture FILE] [--output DIR]` emits `greenlantern.svg`, `greenlantern-dark.svg`, `greenlantern-logo.svg`, `preview.html`, and safe provenance JSON. `--help` documents token and fixture behavior.
 
-- [ ] Write CLI integration tests for fixture generation, real-file outputs, invalid arguments/unsafe metadata, missing input, and no accidental live fetch in fixture mode. Run and confirm failure.
-- [ ] Implement CLI and preview controls for playback, 0–16 s scrubbing, theme, and logo close-up. Include an explicit synthetic-data label where applicable.
-- [ ] Create deterministic fixture and generate committed example assets. Add reusable composite Action using env-passed inputs, Node 22, and no installation requirement.
-- [ ] Add CI tests and two-job daily generation/publication workflow; only publish gets contents:write. Publish via an isolated temporary Git repository, touching only the output branch.
-- [ ] Write README in Thai with runnable commands, profile image embed, workflow setup, real versus fixture data, GraphQL/public behavior, and attribution; document architecture in `docs/how-it-works.md`.
-- [ ] Run `npm test`, fixture CLI, malformed-input CLI, and XML parsing. Verify preview in browser at 0, 5, 10, 14, 16 s and reduced motion.
-- [ ] Attempt live generation for `guatom999`; if sandbox network is the cause, use a narrowly scoped approved network command. Verify available authentication before remote publication.
-- [ ] Request independent final code review; fix actionable findings and rerun affected checks.
-- [ ] Initialize/commit local repository; if GitHub authentication works, create and push `guatom999/github-greenlantern`, verify remote assets/workflow. Otherwise deliver local repo and precise remaining authentication requirement.
+- [x] Write CLI integration tests for fixture generation, real-file outputs, invalid arguments/unsafe metadata, missing input, and no accidental live fetch in fixture mode. Run and confirm failure.
+- [x] Implement CLI and preview controls for playback, 0–16 s scrubbing, theme, and logo close-up. Include an explicit synthetic-data label where applicable.
+- [x] Create deterministic fixture and generate committed example assets. Add reusable composite Action using env-passed inputs, Node 22, and no installation requirement.
+- [x] Add CI tests and two-job daily generation/publication workflow; only publish gets contents:write. Publish via an isolated temporary Git repository, touching only the output branch.
+- [x] Write README in Thai with runnable commands, profile image embed, workflow setup, real versus fixture data, GraphQL/public behavior, and attribution; document architecture in `docs/how-it-works.md`.
+- [x] Run `npm test`, fixture CLI, malformed-input CLI, and XML parsing. Verify preview in browser at 0, 5, 10, 14, 16 s and reduced motion.
+- [x] Attempt live generation for `guatom999`; if sandbox network is the cause, use a narrowly scoped approved network command. Verify available authentication before remote publication.
+- [x] Request independent final code review; fix actionable findings and rerun affected checks.
+- [x] Initialize/commit local repository; if GitHub authentication works, create and push `guatom999/github-greenlantern`, verify remote assets/workflow. Otherwise deliver local repo and precise remaining authentication requirement.
 
 ## Self-review
 
