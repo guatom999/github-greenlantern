@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 import { DURATION, logoCells, sourceKeyframes, logoKeyframes } from './animation.js';
+import type { CalendarGrid, CellPosition, Keyframe, RenderMode, RenderOptions, Theme } from './types.js';
 
 const CELL_SIZE = 12;
 const CELL_PITCH = 16;
 const PADDING = 8;
 const GRID_ROWS = 7;
 
-const XML_ENTITIES = {
+const XML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
@@ -14,7 +15,20 @@ const XML_ENTITIES = {
   "'": '&apos;',
 };
 
-const PALETTES = {
+interface Palette {
+  background: string;
+  empty: string;
+  border: string;
+  levels: [string, string, string, string, string];
+  logo: string;
+}
+
+interface SvgParts {
+  shapes: string[];
+  styles: string[];
+}
+
+const PALETTES: Record<Theme, Palette> = {
   dark: {
     background: '#0b1419',
     empty: '#18262d',
@@ -31,12 +45,12 @@ const PALETTES = {
   },
 };
 
-export function escapeXml(value) {
+export function escapeXml(value: unknown): string {
   return String(value).replace(/[&<>"']/g, character => XML_ENTITIES[character]);
 }
 
 /** Self-contained SVG; CSS animations also work when embedded as an image. */
-export function renderSvg(grid, options = {}) {
+export function renderSvg(grid: CalendarGrid, options: RenderOptions = {}): string {
   const { username = 'GitHub user', theme = 'dark', mode = 'animated' } = options;
   validateRenderOptions(grid, theme, mode);
 
@@ -82,7 +96,7 @@ export function renderSvg(grid, options = {}) {
   ].join('');
 }
 
-function validateRenderOptions(grid, theme, mode) {
+function validateRenderOptions(grid: CalendarGrid, theme: Theme, mode: RenderMode): void {
   if (!Object.hasOwn(PALETTES, theme)) {
     throw new Error('Unknown theme; choose dark or light.');
   }
@@ -101,7 +115,7 @@ function validateRenderOptions(grid, theme, mode) {
   }
 }
 
-function createIdPrefix(grid, username, theme, mode) {
+function createIdPrefix(grid: CalendarGrid, username: string, theme: Theme, mode: RenderMode): string {
   const hash = createHash('sha256')
     .update(JSON.stringify([grid, username, theme, mode]))
     .digest('hex')
@@ -111,28 +125,33 @@ function createIdPrefix(grid, username, theme, mode) {
   return `gl${hash}`;
 }
 
-function canvasSize(cellCount) {
+function canvasSize(cellCount: number): number {
   const finalGap = CELL_PITCH - CELL_SIZE;
   return PADDING * 2 + cellCount * CELL_PITCH - finalGap;
 }
 
-function cellRect(cell, attributes) {
+function cellRect(cell: CellPosition, attributes: string): string {
   const x = PADDING + cell.x * CELL_PITCH;
   const y = PADDING + cell.y * CELL_PITCH;
 
   return `<rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}" rx="3" ${attributes}/>`;
 }
 
-function renderBaseCells(grid, palette) {
+function renderBaseCells(grid: CalendarGrid, palette: Palette): string[] {
   return grid.cells.map(cell => cellRect(
     cell,
     `class="base" fill="${palette.empty}" stroke="${palette.border}" stroke-width="0.5"`,
   ));
 }
 
-function renderContributions(grid, palette, prefix, animated) {
-  const shapes = [];
-  const styles = [];
+function renderContributions(
+  grid: CalendarGrid,
+  palette: Palette,
+  prefix: string,
+  animated: boolean,
+): SvgParts {
+  const shapes: string[] = [];
+  const styles: string[] = [];
 
   for (const cell of grid.cells.filter(cell => cell.level > 0)) {
     const name = `${prefix}c${cell.x}_${cell.y}`;
@@ -151,9 +170,9 @@ function renderContributions(grid, palette, prefix, animated) {
   return { shapes, styles };
 }
 
-function renderLogo(width, palette, prefix, animated) {
-  const shapes = [];
-  const styles = [];
+function renderLogo(width: number, palette: Palette, prefix: string, animated: boolean): SvgParts {
+  const shapes: string[] = [];
+  const styles: string[] = [];
 
   for (const [index, cell] of logoCells(width).entries()) {
     const name = `${prefix}l${index}`;
@@ -172,9 +191,9 @@ function renderLogo(width, palette, prefix, animated) {
   return { shapes, styles };
 }
 
-function renderKeyframes(name, points) {
+function renderKeyframes(name: string, points: Keyframe[]): string {
   // Deduplicate instants: the last logo cell reaches full opacity at 10s.
-  const opacityByPercent = new Map(points.map(([time, opacity]) => [
+  const opacityByPercent = new Map<number, number>(points.map(([time, opacity]) => [
     Number((time / DURATION * 100).toFixed(5)),
     opacity,
   ]));
@@ -185,7 +204,7 @@ function renderKeyframes(name, points) {
   return `@keyframes ${name}{${frames}}`;
 }
 
-function reducedMotionStyles(prefix) {
+function reducedMotionStyles(prefix: string): string {
   return [
     '@media (prefers-reduced-motion:reduce){',
     `#${prefix} .contribution{animation:none!important;opacity:1!important}`,
@@ -194,7 +213,7 @@ function reducedMotionStyles(prefix) {
   ].join('');
 }
 
-function glowFilter(prefix) {
+function glowFilter(prefix: string): string {
   return [
     `<defs><filter id="${prefix}glow" x="-70%" y="-70%" width="240%" height="240%">`,
     '<feGaussianBlur stdDeviation="1.2"/>',

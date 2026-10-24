@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>GitHub Green Lantern · Project flow</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --page: #f7faf8; --text: #17251e; --muted: #4b6053; --line: #a9bdb1;
+      --node: #edf4ef; --active: #d4eedc; --accent: #166b3d; --code: #e4ece7;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      font-weight: 400;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #101a15; --text: #e0eee5; --muted: #a8bfb0; --line: #526b5d;
+        --node: #1b2d23; --active: #254f36; --accent: #81d89d; --code: #25382d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--text); }
+    main { width: min(100% - 32px, 1000px); margin: 32px auto 48px; }
+    h1 { margin: 0; font-size: 28px; font-weight: 500; line-height: 1.35; }
+    h2 { margin: 0 0 16px; font-size: 21px; font-weight: 500; }
+    p { margin: 8px 0 0; line-height: 1.65; }
+    a { color: var(--accent); }
+    code { font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+    button { font: inherit; color: inherit; }
+    .intro, .note { color: var(--muted); }
+    .intro { max-width: 78ch; }
+    .selection {
+      margin: 24px 0 32px; padding: 14px 0; min-height: 100px;
+      border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 1; background: var(--page);
+    }
+    .selection code { display: block; color: var(--accent); font-weight: 500; }
+    .selection p { margin-top: 5px; }
+    section + section { margin-top: 38px; padding-top: 30px; border-top: 1px solid var(--line); }
+    .lane { display: grid; gap: 0; }
+    .node {
+      display: block; width: 100%; padding: 14px 16px; text-align: left;
+      background: var(--node); border: 1px solid transparent; border-radius: 5px;
+      cursor: pointer; line-height: 1.55;
+    }
+    .node:hover { border-color: var(--line); }
+    .node[aria-pressed="true"] { background: var(--active); border-color: var(--accent); }
+    .node:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .node .file { display: block; color: var(--accent); font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+    .node .fn { display: block; font-weight: 500; }
+    .node .hint { display: block; color: var(--muted); font-size: 14px; }
+    .down { padding: 7px 0; text-align: center; color: var(--muted); line-height: 1.4; }
+    .down::before { content: "↓"; display: block; color: var(--accent); font-size: 22px; }
+    .branches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .branches .node { height: 100%; }
+    .dependent { display: grid; grid-template-columns: 1fr 1.25fr; align-items: stretch; gap: 12px; }
+    .timing { display: grid; gap: 7px; }
+    .dependency-label { text-align: right; color: var(--muted); font-size: 14px; }
+    .outputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .files { background: var(--code); padding: 12px 14px; line-height: 1.7; border-radius: 5px; overflow-wrap: anywhere; }
+    .files code { display: block; font-size: 14px; }
+    .files span { display: block; color: var(--muted); font-size: 14px; }
+    .horizontal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .horizontal > div { display: flex; flex-direction: column; }
+    .horizontal > div > .node { flex: 1; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 0 0; color: var(--muted); }
+    .controls span::before { content: "• "; color: var(--accent); }
+    .timeline { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 15px 0 0; }
+    .timeline div { padding: 9px 8px; border-top: 3px solid var(--accent); background: var(--node); }
+    .timeline code, .timeline span { display: block; font-size: 14px; }
+    .timeline span { color: var(--muted); }
+    .flow-step { color: var(--muted); font-size: 14px; margin-bottom: 5px; }
+    footer { margin-top: 30px; color: var(--muted); font-size: 14px; }
+    @media (max-width: 660px) {
+      h1 { font-size: 24px; }
+      .branches, .outputs, .horizontal, .dependent { grid-template-columns: 1fr; }
+      .dependency-label { text-align: left; }
+      .dependent .timing { order: 2; }
+      .timeline { grid-template-columns: 1fr; }
+      .timeline div { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+      .selection { min-height: 135px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="greenlantern-flow">
+    <header>
+      <h1>GitHub Green Lantern · เส้นทางการทำงาน</h1>
+      <p class="intro">เลือกกล่องเพื่อดูหน้าที่ของไฟล์ · แก้ source <code>.ts</code> → คอมไพล์ใน <code>build/</code> → สร้างภาพใน <code>dist/</code></p>
+    </header>
+
+    <div class="selection" aria-live="polite" aria-atomic="true">
+      <code id="selected-file">bin/greenlantern.ts</code>
+      <p id="selected-role">main() รับ options โหลดข้อมูล จัดกริด สร้างเนื้อหาทั้ง 5 ไฟล์ แล้วเขียนลง --output; เมื่อผิดพลาดจะแสดงข้อความและจบด้วย exit code 1</p>
+    </div>
+
+    <section aria-labelledby="generation-title">
+      <h2 id="generation-title">1 · คำสั่ง → contribution → SVG</h2>
+      <div class="lane">
+        <button type="button" class="node" data-node="cli" aria-pressed="true">
+          <span class="file">bin/greenlantern.ts</span>
+          <span class="fn">main() → parseOptions() → validateUsername()</span>
+          <span class="hint">npm run generate -- --user USER · หรือ npm run demo</span>
+        </button>
+        <div class="down">loadContributionDays() เลือก 1 เส้นทาง</div>
+        <div class="branches">
+          <button type="button" class="node" data-node="fixture" aria-pressed="false">
+            <span class="file">fixtures/demo.json / --fixture</span>
+            <span class="fn">readFile() → JSON.parse()</span>
+            <span class="hint">array หรือ { days: [...] } · ไม่ใช้เครือข่าย</span>
+          </button>
+          <button type="button" class="node" data-node="public" aria-pressed="false">
+            <span class="file">src/github.ts</span>
+            <span class="fn">ไม่มี token → public HTML</span>
+            <span class="hint">fetchContributions() → parseContributionHtml()<br>date + level 0–4</span>
+          </button>
+          <button type="button" class="node" data-node="graphql" aria-pressed="false">
+            <span class="file">src/github.ts</span>
+            <span class="fn">มี token → GraphQL</span>
+            <span class="hint">fetchContributions() → parseGraphQlDays()<br>date + level + count</span>
+          </button>
+        </div>
+        <div class="down">ContributionDay[] + source</div>
+        <button type="button" class="node" data-node="calendar" aria-pressed="false">
+          <span class="file">src/calendar.ts</span>
+          <span class="fn">normalizeDays() → CalendarGrid</span>
+          <span class="hint">ตรวจข้อมูล → เรียง UTC → หาวันอาทิตย์แรก → เติมช่องว่าง · คอลัมน์ = สัปดาห์ / 7 แถว = อาทิตย์ถึงเสาร์</span>
+        </button>
+        <div class="down">bin/greenlantern.ts · buildOutputFiles()</div>
+        <div class="dependent">
+          <div class="timing">
+            <button type="button" class="node" data-node="animation" aria-pressed="false">
+              <span class="file">src/animation.ts</span>
+              <span class="fn">sourceKeyframes() · logoKeyframes()</span>
+              <span class="hint">DURATION = 16 · logoCells() = 22 ช่อง</span>
+            </button>
+            <span class="dependency-label">จุดเวลา–opacity → renderSvg() นำไปเขียน CSS</span>
+          </div>
+          <button type="button" class="node" data-node="svg" aria-pressed="false">
+            <span class="file">src/svg.ts</span>
+            <span class="fn">renderSvg()</span>
+            <span class="hint">พื้นหลัง → base → contribution → logo<br>CSS keyframes + glow + reduced motion</span>
+          </button>
+        </div>
+        <div class="down">buildOutputFiles() รวม SVG + metadata + renderPreview()</div>
+        <div class="outputs" aria-label="ไฟล์ผลลัพธ์ 5 ไฟล์">
+          <div class="files"><code>greenlantern.svg</code><code>greenlantern-dark.svg</code><code>greenlantern-logo.svg</code><span>แอนิเมชัน 2 ธีม + โลโก้ภาพนิ่ง</span></div>
+          <div class="files"><code>calendar.json</code><span>buildMetadata()<br>วัน / level / count / ที่มา</span></div>
+          <div class="files"><code>preview.html</code><span>renderPreview()<br>SVG + CSS + player ในไฟล์เดียว</span></div>
+        </div>
+        <div class="down">writeOutputFiles() → mkdir() + writeFile() → --output (เริ่มต้น dist/)</div>
+      </div>
+      <p class="note">ช่วงเวลาในลูป 16 วินาที · การดับ contribution และเปิดโลโก้เกิดซ้อนกัน</p>
+      <div class="timeline" aria-label="รายการช่วงเวลาที่อาจซ้อนกัน; ความกว้างของช่องไม่ได้แทนระยะเวลา">
+        <div><code>0–2 s</code><span>ปฏิทินเดิม</span></div>
+        <div><code>2–8 s</code><span>ดับจากขอบเข้ากลาง</span></div>
+        <div><code>6–10 s</code><span>โลโก้ค่อย ๆ สว่าง</span></div>
+        <div><code>10–13 s</code><span>โลโก้เต้นแสง</span></div>
+        <div><code>13–16 s</code><span>กลับเป็นปฏิทิน</span></div>
+      </div>
+      <p class="note">SVG เก็บ keyframes ให้ browser เล่นเอง · sampleFrame() เป็น API ตรวจเฟรมหรือทำ renderer เพิ่ม ไม่ได้ถูกเรียกทีละเฟรมขณะสร้าง SVG</p>
+    </section>
+
+    <section aria-labelledby="preview-title">
+      <h2 id="preview-title">2 · Browser เล่นและลากดูไฟล์ที่สร้างแล้ว</h2>
+      <div class="horizontal">
+        <div>
+          <div class="flow-step">CSS เป็น input asset ของ renderPreview() →</div>
+          <button type="button" class="node" data-node="styles" aria-pressed="false">
+            <span class="file">src/preview/styles.css</span>
+            <span class="fn">layout + สี + focus styles</span>
+            <span class="hint">จัด controls และภาพปฏิทิน<br>กำหนดหน้าตา phase ที่ active</span>
+          </button>
+        </div>
+        <div>
+          <div class="flow-step">อ่าน CSS + player.js แล้วสร้าง preview.html →</div>
+          <button type="button" class="node" data-node="preview" aria-pressed="false">
+            <span class="file">src/preview.ts</span>
+            <span class="fn">renderPreview()</span>
+            <span class="hint">ฝัง SVG / CSS / classic player script<br>escape ข้อมูลก่อนใส่ HTML</span>
+          </button>
+        </div>
+        <div>
+          <div class="flow-step">เปิด HTML ออฟไลน์ → browser รัน player</div>
+          <button type="button" class="node" data-node="player" aria-pressed="false">
+            <span class="file">src/preview/player.ts</span>
+            <span class="fn">tick() → updatePlayer()</span>
+            <span class="hint">อัปเดตเวลา / slider / phase<br>syncSvgAnimations() ใช้นาฬิกาเดียว</span>
+          </button>
+        </div>
+      </div>
+      <p class="note">CSS และ player.js เป็น assets ที่ถูกฝังตอนสร้างไฟล์; เมื่อเปิด preview.html browser จึงรัน player เพื่อควบคุม SVG</p>
+      <div class="controls"><span>Play/Pause → เปิด/หยุดนาฬิกา</span><span>ลากเวลา → หยุด + เลือกวินาที</span><span>Theme → สลับ SVG</span><span>Reduced motion → ภาพนิ่ง</span></div>
+    </section>
+
+    <section aria-labelledby="actions-title">
+      <h2 id="actions-title">3 · GitHub Actions แยกสร้างไฟล์กับเผยแพร่</h2>
+      <button type="button" class="node" data-node="workflow" aria-pressed="false">
+        <span class="file">.github/workflows/generate.yml</span>
+        <span class="fn">schedule / workflow_dispatch / push ตาม paths</span>
+        <span class="hint">07:17 น. ประเทศไทยทุกวัน · username ว่างใช้เจ้าของ repo · job generate มี contents: read</span>
+      </button>
+      <div class="down">checkout → uses: ./</div>
+      <button type="button" class="node" data-node="action" aria-pressed="false">
+        <span class="file">action.yml · composite action</span>
+        <span class="fn">setup Node → npm ci → build → build/bin/greenlantern.js</span>
+        <span class="hint">username / token / output ผ่าน env · สร้าง dist/ และคืน path svg / svg_dark</span>
+      </button>
+      <div class="down">upload-artifact: greenlantern-assets → job publish → download-artifact</div>
+      <button type="button" class="node" data-node="publish" aria-pressed="false">
+        <span class="file">.github/workflows/generate.yml · job publish</span>
+        <span class="fn">contents: write → Git repo ชั่วคราว → branch output</span>
+        <span class="hint">fetch ประวัติ output ถ้ามี → คัดลอก 5 ไฟล์ → commit/push เมื่อข้อมูลเปลี่ยน → README โหลด raw SVG</span>
+      </button>
+    </section>
+
+    <section aria-labelledby="build-title">
+      <h2 id="build-title">4 · Source, runtime และ types อยู่ตรงไหน</h2>
+      <div class="horizontal">
+        <button type="button" class="node" data-node="build" aria-pressed="false">
+          <span class="file">tsconfig.json<br>tsconfig.browser.json</span>
+          <span class="fn">npm run build</span>
+          <span class="hint">NodeNext สำหรับ Node<br>classic script สำหรับ player</span>
+        </button>
+        <button type="button" class="node" data-node="types" aria-pressed="false">
+          <span class="file">src/types.ts<br>src/validation.ts</span>
+          <span class="fn">ชนิดข้อมูล + ตรวจ input จริง</span>
+          <span class="hint">types หายเมื่อคอมไพล์<br>validation ยังคงรันใน JavaScript</span>
+        </button>
+        <button type="button" class="node" data-node="library" aria-pressed="false">
+          <span class="file">src/index.ts</span>
+          <span class="fn">package entry point</span>
+          <span class="hint">public runtime exports<br>และ export type สำหรับผู้ใช้ TS</span>
+        </button>
+      </div>
+      <div class="down">tsc สร้าง JavaScript / declarations / source maps · scripts/copy-assets.ts คัดลอก CSS</div>
+      <div class="outputs">
+        <div class="files"><code>build/bin/greenlantern.js</code><span>Node.js รัน CLI</span></div>
+        <div class="files"><code>build/src/index.js</code><code>build/src/*.d.ts</code><span>import library + public types</span></div>
+        <div class="files"><code>build/src/preview/player.js</code><code>build/src/preview/styles.css</code><span>renderPreview() อ่านแล้วฝัง</span></div>
+      </div>
+      <p class="note">Source import ลงท้าย .js ตาม NodeNext แม้แก้ไฟล์ .ts · build/ เก็บโค้ดที่คอมไพล์ · dist/ เก็บภาพ/HTML/JSON ที่ CLI สร้าง</p>
+    </section>
+
+    <footer><a href="../project-flow.md">ตารางไฟล์และ Mermaid ใน project-flow.md</a> · แผนภาพนี้ทำงานออฟไลน์และไม่โหลดข้อมูลจาก GitHub</footer>
+  </main>
+  <script>
+    const details = {
+      cli: ['bin/greenlantern.ts', 'main() รับ options โหลดข้อมูล จัดกริด สร้างเนื้อหาทั้ง 5 ไฟล์ แล้วเขียนลง --output; เมื่อผิดพลาดจะแสดงข้อความและจบด้วย exit code 1'],
+      fixture: ['bin/greenlantern.ts · loadContributionDays()', 'อ่านไฟล์ --fixture ด้วย readFile() และ JSON.parse(); รับ array หรือ object ที่มี days จากนั้น normalizeDays() ตรวจข้อมูลจริง ไม่มีการเรียก fetchContributions() ในเส้นทางนี้'],
+      public: ['src/github.ts · public HTML', 'เมื่อไม่มี GITHUB_TOKEN จะ GET github.com/users/USER/contributions; parseContributionHtml() อ่าน data-date และ data-level 0–4 แล้วตรวจความถูกต้องของวัน ไม่มี count ในข้อมูล public'],
+      graphql: ['src/github.ts · GraphQL', 'เมื่อมี GITHUB_TOKEN จะ POST api.github.com/graphql; parseGraphQlDays() แปลง contributionLevel เป็น 0–4 และเก็บ contributionCount เมื่อมี ตรวจ errors/user/weeks และไม่ fallback ไป public เมื่อ token ผิดพลาด'],
+      calendar: ['src/calendar.ts · normalizeDays()', 'ตรวจ array วันที่จริงและไม่ซ้ำ level 0–4 และ count ไม่ติดลบ; เรียง UTC แล้วจัดตำแหน่งจากวันอาทิตย์แรก ช่องที่ขาดใช้ date: null, level: 0; renderer ต้องการความกว้างอย่างน้อย 5 คอลัมน์'],
+      animation: ['src/animation.ts', 'sourceKeyframes() ดับจากขอบเข้ากลาง; logoKeyframes() เปิดโลโก้ 22 ช่องตามลำดับแถวและวนรอบ 16 วินาที; sampleFrame() คำนวณ opacity ณ เวลาใดก็ได้สำหรับ API/การตรวจเฟรม แต่ SVG ใช้ CSS keyframes โดยตรง'],
+      svg: ['src/svg.ts · renderSvg()', 'รับ CalendarGrid และ RenderOptions; สร้างชั้น base/contribution/logo เลือก palette เขียน CSS keyframes และ glow; IDs มาจาก hash เพื่อแยก SVG หลายภาพ มี title/desc และ reduced-motion; ไม่ฝัง JavaScript ลง SVG'],
+      preview: ['src/preview.ts · renderPreview()', 'อ่าน CSS และ player.js ที่อยู่ข้างไฟล์ที่คอมไพล์ แล้วฝังพร้อม SVG สองธีมและโลโก้ระยะใกล้เป็น preview.html ไฟล์เดียว ข้อมูล username/วันที่ผ่าน escapeXml() ก่อนแทรก'],
+      player: ['src/preview/player.ts', 'tick() ใช้ requestAnimationFrame เดิน currentSeconds; updatePlayer() อัปเดต slider/clock/phase และ syncSvgAnimations() pause() animation ทุกตัวแล้วตั้ง currentTime; Theme สลับภาพและคงเวลาเดิม ไม่อ่าน GitHub ใหม่'],
+      styles: ['src/preview/styles.css', 'เป็น presentation asset ของ renderPreview(): จัด layout ปฏิทินและ controls สี focus styles และหน้าตา phase ที่ active; scripts/copy-assets.ts คัดลอกไป build/src/preview/styles.css ก่อนฝังลง HTML ส่วนการอัปเดตเวลาและสถานะอยู่ใน player.ts'],
+      workflow: ['.github/workflows/generate.yml · generate', 'เริ่มตาม schedule 17 0 * * * หรือสั่งด้วยมือ หรือ push main ตาม paths ที่กำหนด; generate มี contents: read เรียก composite action แล้ว upload dist/ เป็น artifact greenlantern-assets อายุ 3 วัน'],
+      action: ['action.yml', 'Composite action ตั้ง Node 22 ติดตั้งเครื่องมือ build ด้วย npm ci คอมไพล์ source แล้วรัน CLI ใน build/bin/; รับ github_user_name/github_token/output_directory และคืน svg/svg_dark ผ่าน GITHUB_OUTPUT; การเผยแพร่อยู่ใน workflow'],
+      publish: ['.github/workflows/generate.yml · publish', 'รอ generate สำเร็จและ download artifact จากนั้นใช้ contents: write สร้าง Git repo ชั่วคราว fetch output เดิมถ้ามี คัดลอกไฟล์และ commit/push เมื่อข้อมูลเปลี่ยน ใช้ gh auth setup-git เป็น credential helper'],
+      build: ['tsconfig.json · tsconfig.browser.json · scripts/copy-assets.ts', 'server config คอมไพล์ src/bin/scripts/test แบบ NodeNext ไป build/ พร้อม .d.ts และ source maps; browser config คอมไพล์ player แบบ classic script; copy-assets.ts คัดลอก CSS และ npm test รัน build/test/*.test.js'],
+      types: ['src/types.ts · src/validation.ts', 'types.ts ระบุ ContributionDay/CalendarGrid/Keyframe/SampledCell/options/metadata และ type ของ fetch; type exports หายจาก runtime ส่วน isRecord()/isContributionLevel() ใน validation.ts ยังคงตรวจ input จริงใน CLI/calendar/github และ svg.ts ตรวจ options/ขนาดกริดเอง'],
+      library: ['src/index.ts → build/src/index.js', 'Public runtime API: normalizeDays, fetchContributions, parseContributionHtml, validateUsername, DURATION, LOGO, logoCells, sampleFrame, sourceOpacity, logoOpacity, renderSvg; export type แยกต่างหาก และ import library ไม่เรียก CLI main()']
+    };
+    const root = document.getElementById('greenlantern-flow');
+    const selectedFile = document.getElementById('selected-file');
+    const selectedRole = document.getElementById('selected-role');
+    const nodes = [...root.querySelectorAll('[data-node]')];
+    for (const node of nodes) {
+      node.addEventListener('click', () => {
+        const detail = details[node.dataset.node];
+        for (const other of nodes) other.setAttribute('aria-pressed', String(other === node));
+        selectedFile.textContent = detail[0];
+        selectedRole.textContent = detail[1];
+      });
+    }
+  </script>
+</body>
+</html>

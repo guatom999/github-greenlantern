@@ -35,3 +35,34 @@ the inspection browser used its normal motion preference.
 
 The independent reviewer left hosted publication for the executor to verify.
 The successful workflow run linked above closes that remaining check.
+
+## TypeScript migration and project flow — 2026-10-24
+
+The user requested two subagents: one to migrate the source and review
+readability, and one to draw the execution flow. Their work was integrated in the
+same checkout with separate source/config and diagram/documentation ownership.
+
+- All authored modules, browser player, build script and tests are TypeScript.
+- `npm run typecheck` passes with strict NodeNext and separate classic-browser
+  compiler configurations.
+- `npm test` builds the project and passes all 21 compiled tests on Node 22.11.0.
+- Clean `npm ci`, demo generation and package installation were verified.
+- A packed-package consumer imported the public functions/types, compiled and
+  ran, and used the installed CLI from a different working directory. The
+  installed package has zero runtime dependencies.
+- All three fixture SVGs and `calendar.json` have identical SHA-256 hashes before
+  and after migration.
+- Runtime JSON validation remains present; TypeScript contracts are defined in
+  `src/types.ts` and shared guards in `src/validation.ts`.
+- Browser smoke on the compiled preview passed: scrubbing to 10 seconds shows
+  all 22 logo cells and zero contribution lights across exactly seven rows;
+  switching themes retains the selected time, with no console errors.
+- [Project flow](project-flow.md) covers CLI, data sources, date normalization,
+  timing, SVG layers, browser preview, Actions and build/type boundaries. Its
+  offline HTML diagram has 16 selectable nodes, with role details for each.
+- The flow diagram's file selection was verified in the browser; exactly one
+  node remains selected and the role panel updates without horizontal overflow.
+
+On this Windows environment, `npm.ps1` consumes the argument separator when
+forwarding CLI options. The README uses the direct compiled CLI as its primary
+command and documents `npm.cmd run generate -- ...` for PowerShell users.

@@ -4,12 +4,14 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { normalizeDays, fetchContributions, validateUsername, renderSvg } from '../src/index.js';
 import { renderPreview } from '../src/preview.js';
+import { isRecord } from '../src/validation.js';
+import type { CalendarGrid, CalendarMetadata, ContributionDay, ContributionSource } from '../src/types.js';
 
 const HELP = `GitHub Green Lantern — a seven-row contribution animation
 
 Usage:
-  node bin/greenlantern.js --user USERNAME [--output dist]
-  node bin/greenlantern.js --user demo --fixture fixtures/demo.json --output examples
+  github-greenlantern --user USERNAME [--output dist]
+  github-greenlantern --user demo --fixture fixtures/demo.json --output examples
 
 Options:
   --user       GitHub username (required)
@@ -30,9 +32,21 @@ const CLI_OPTIONS = {
   fixture: { type: 'string' },
   output: { type: 'string' },
   help: { type: 'boolean', short: 'h' },
-};
+} as const;
 
-async function main() {
+interface CliOptions {
+  user?: string;
+  fixture?: string;
+  output?: string;
+  help?: boolean;
+}
+
+interface LoadedDays {
+  days: unknown;
+  source: ContributionSource;
+}
+
+async function main(): Promise<void> {
   const options = parseOptions();
 
   if (options.help) {
@@ -40,26 +54,28 @@ async function main() {
     return;
   }
 
-  validateUsername(options.user);
+  const username = validateUsername(options.user);
   if (options.output === '' || options.fixture === '') {
     throw new Error('Option value must not be empty.');
   }
 
-  const { days, source } = await loadContributionDays(options);
+  const { days, source } = await loadContributionDays(username, options.fixture);
   const grid = normalizeDays(days);
-  const files = buildOutputFiles(grid, options.user, source, days.length);
+  // Padding and absent dates do not count toward source provenance.
+  const dayCount = grid.cells.filter(cell => cell.date !== null).length;
+  const files = buildOutputFiles(grid, username, source, dayCount);
   const outputDirectory = resolve(options.output ?? 'dist');
 
   await writeOutputFiles(outputDirectory, files);
   process.stdout.write([
-    `Generated ${grid.width} weeks × 7 rows for ${options.user} (${source}).`,
+    `Generated ${grid.width} weeks × 7 rows for ${username} (${source}).`,
     outputDirectory,
     'Open preview.html to play or scrub the 16-second loop.',
     '',
   ].join('\n'));
 }
 
-function parseOptions() {
+function parseOptions(): CliOptions {
   try {
     const { values } = parseArgs({
       options: CLI_OPTIONS,
@@ -73,12 +89,12 @@ function parseOptions() {
   }
 }
 
-async function loadContributionDays({ user, fixture }) {
+async function loadContributionDays(username: string, fixture: string | undefined): Promise<LoadedDays> {
   if (!fixture) {
-    return fetchContributions(user, { token: process.env.GITHUB_TOKEN });
+    return fetchContributions(username, { token: process.env.GITHUB_TOKEN });
   }
 
-  let data;
+  let data: unknown;
   try {
     const json = await readFile(resolve(fixture), 'utf8');
     data = JSON.parse(json);
@@ -87,12 +103,17 @@ async function loadContributionDays({ user, fixture }) {
   }
 
   return {
-    days: Array.isArray(data) ? data : data?.days,
+    days: isRecord(data) ? data.days : data,
     source: 'fixture',
   };
 }
 
-function buildOutputFiles(grid, username, source, dayCount) {
+function buildOutputFiles(
+  grid: CalendarGrid,
+  username: string,
+  source: ContributionSource,
+  dayCount: number,
+): Record<string, string> {
   const light = renderSvg(grid, { username, theme: 'light' });
   const dark = renderSvg(grid, { username, theme: 'dark' });
   const logo = renderSvg(grid, { username, theme: 'dark', mode: 'logo' });
@@ -108,7 +129,7 @@ function buildOutputFiles(grid, username, source, dayCount) {
   };
 }
 
-function renderLogoCloseup(username) {
+function renderLogoCloseup(username: string): string {
   // Five complete weeks create the 5-by-7 canvas used by the preview thumbnail.
   const closeupGrid = normalizeDays([
     { date: '2026-01-04', level: 0 },
@@ -118,14 +139,23 @@ function renderLogoCloseup(username) {
   return renderSvg(closeupGrid, { username, theme: 'dark', mode: 'logo' });
 }
 
-function buildMetadata(grid, username, source, dayCount) {
-  const days = grid.cells
-    .filter(cell => cell.date)
-    .map(({ date, level, count }) => ({
+function buildMetadata(
+  grid: CalendarGrid,
+  username: string,
+  source: ContributionSource,
+  dayCount: number,
+): CalendarMetadata {
+  const days: ContributionDay[] = [];
+  for (const { date, level, count } of grid.cells) {
+    if (date === null) {
+      continue;
+    }
+    days.push({
       date,
       level,
       ...(count !== undefined ? { count } : {}),
-    }));
+    });
+  }
 
   return {
     username,
@@ -139,7 +169,7 @@ function buildMetadata(grid, username, source, dayCount) {
   };
 }
 
-async function writeOutputFiles(outputDirectory, files) {
+async function writeOutputFiles(outputDirectory: string, files: Record<string, string>): Promise<void> {
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all(Object.entries(files).map(([filename, content]) => (
     writeFile(join(outputDirectory, filename), content, 'utf8')
@@ -147,6 +177,7 @@ async function writeOutputFiles(outputDirectory, files) {
 }
 
 main().catch(error => {
-  process.stderr.write(`greenlantern: ${error.message}\n`);
+  const message = error instanceof Error ? error.message : 'Unexpected generation error.';
+  process.stderr.write(`greenlantern: ${message}\n`);
   process.exitCode = 1;
 });

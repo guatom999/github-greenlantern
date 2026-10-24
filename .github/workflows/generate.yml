@@ -13,6 +13,10 @@ on:
     paths:
       - src/**
       - bin/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig*.json
       - action.yml
       - .github/workflows/generate.yml
 permissions:

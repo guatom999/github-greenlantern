@@ -21,9 +21,18 @@ test('escapes metadata and validates rendering options', () => {
   const svg = renderSvg(grid, { username: '<img onerror="evil"> & test' });
   assert.match(svg, /&lt;img onerror=&quot;evil&quot;&gt; &amp; test/);
   assert.doesNotMatch(svg, /<img/);
-  assert.throws(() => renderSvg(grid, { theme: 'invalid' }), /theme/i);
-  assert.throws(() => renderSvg(grid, { mode: 'gif' }), /mode/i);
-  assert.throws(() => renderSvg({ ...grid, height: 8 }), /seven|7|grid/i);
+  assert.throws(() => {
+    // @ts-expect-error JavaScript callers can still pass an invalid theme at runtime.
+    renderSvg(grid, { theme: 'invalid' });
+  }, /theme/i);
+  assert.throws(() => {
+    // @ts-expect-error Verify runtime protection independently of the public types.
+    renderSvg(grid, { mode: 'gif' });
+  }, /mode/i);
+  assert.throws(() => {
+    // @ts-expect-error The public grid contract requires exactly seven rows.
+    renderSvg({ ...grid, height: 8 });
+  }, /seven|7|grid/i);
 });
 
 test('static logo and calendar SVGs contain no animations', () => {

@@ -24,23 +24,35 @@ flowchart LR
   E --> F[README / local preview]
 ```
 
-`src/github.js` reads and validates days. GraphQL supplies counts and levels; public HTML supplies levels only. HTTP errors, missing users, malformed responses and request timeouts fail clearly without echoing response bodies or credentials. No fallback silently changes a token failure into a successful public-only result.
+The authored source is TypeScript. `npm run build` compiles it into `build/`,
+including the CLI at `build/bin/greenlantern.js` and public library at
+`build/src/index.js`. `dist/` remains the generated-image directory. The compiled
+runtime has no package dependencies. See the [file-by-file flow](project-flow.md)
+for a navigable diagram of the complete pipeline.
 
-`src/calendar.js` sorts dates, finds the Sunday before the first date, and computes each position from elapsed UTC days. This avoids shifting columns when the first week starts on a Wednesday or Saturday. Missing source positions are inactive. Leap days work like every other UTC day. Dates, duplicate dates, intensities and counts are validated.
+`src/types.ts` defines the day, calendar, keyframe, render option and metadata
+contracts shared by the modules. These types are erased during compilation.
+`src/validation.ts` contains runtime guards for unknown JSON data and contribution
+levels, so external data is still checked when the compiled JavaScript runs.
 
-`src/animation.js` defines time/opacity points for the contribution and logo layers. The source cells fade from the outer columns toward the middle. The 22 symbol cells are revealed in row order from 6–10 seconds. `sampleFrame(grid, seconds)` exposes the same timeline for any future raster renderer.
+`src/github.ts` reads and validates days. GraphQL supplies counts and levels; public HTML supplies levels only. HTTP errors, missing users, malformed responses and request timeouts fail clearly without echoing response bodies or credentials. No fallback silently changes a token failure into a successful public-only result.
 
-`src/svg.js` draws inactive cells, contribution overlays and symbol overlays. CSS keyframes interpolate the opacity points; it contains no JavaScript or external dependencies. Light/dark palettes are separate SVGs. `prefers-reduced-motion` hides the logo layer and retains original contributions.
+`src/calendar.ts` sorts dates, finds the Sunday before the first date, and computes each position from elapsed UTC days. This avoids shifting columns when the first week starts on a Wednesday or Saturday. Missing source positions are inactive. Leap days work like every other UTC day. Dates, duplicate dates, intensities and counts are validated.
 
-`bin/greenlantern.js` reads options, loads contribution days, builds output files,
+`src/animation.ts` defines time/opacity points for the contribution and logo layers. The source cells fade from the outer columns toward the middle. The 22 symbol cells are revealed in row order from 6–10 seconds. `sampleFrame(grid, seconds)` exposes the same timeline for any future raster renderer.
+
+`src/svg.ts` draws inactive cells, contribution overlays and symbol overlays. CSS keyframes interpolate the opacity points; the generated SVG contains no JavaScript or external dependencies. Light/dark palettes are separate SVGs. `prefers-reduced-motion` hides the logo layer and retains original contributions.
+
+`bin/greenlantern.ts` reads options, loads contribution days, builds output files,
 then writes them to disk. Provenance lives in `calendar.json`; fixture mode never
 accesses the network.
 
 The preview source is split by responsibility:
 
-- `src/preview.js` builds the HTML and inserts escaped metadata.
+- `src/preview.ts` builds the HTML and inserts escaped metadata.
 - `src/preview/styles.css` defines the layout and visual styling.
-- `src/preview/player.js` handles playback, scrubbing, phases and theme selection.
+- `src/preview/player.ts` handles playback, scrubbing, phases and theme selection;
+  the build compiles it to JavaScript for the browser.
 
 CSS and player code are embedded into the generated `preview.html`, so the
 result remains a single portable file. Tokens never appear in the preview.

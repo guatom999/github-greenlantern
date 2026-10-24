@@ -8,7 +8,7 @@
   <img alt="Contributions fade inward and form a Green Lantern symbol across seven rows" src="https://raw.githubusercontent.com/guatom999/github-greenlantern/output/greenlantern-dark.svg">
 </picture>
 
-อ่านข้อมูลจริงของ username แล้ววาดกราฟใหม่ จึงได้ไฟล์ **animated SVG** คมชัดสำหรับ README ไม่ต้องติดตั้ง browser หรือ dependency เพิ่ม ภาพนี้ไม่เปลี่ยนสถิติ contribution บน GitHub
+อ่านข้อมูลจริงของ username แล้ววาดกราฟใหม่ จึงได้ไฟล์ **animated SVG** คมชัดสำหรับ README โค้ดเขียนด้วย TypeScript และไม่มี runtime dependency ไม่ต้องติดตั้ง browser เพื่อสร้าง SVG ภาพนี้ไม่เปลี่ยนสถิติ contribution บน GitHub
 
 ## เริ่มใช้ในเครื่อง
 
@@ -17,10 +17,20 @@
 ```sh
 git clone https://github.com/guatom999/github-greenlantern.git
 cd github-greenlantern
-node bin/greenlantern.js --user guatom999 --output dist
+npm ci
+npm run build
+node build/bin/greenlantern.js --user guatom999 --output dist
 ```
 
 เปิด `dist/preview.html` เพื่อเล่น หยุด และลากดูแต่ละช่วงของแอนิเมชัน เปลี่ยน `--user` เป็น GitHub username ใดก็ได้
+
+คำสั่ง `build` คอมไพล์ TypeScript ไปที่ `build/` ส่วน `dist/` เก็บไฟล์ภาพที่สร้างแล้ว หลัง build สามารถรัน CLI ซ้ำได้โดยไม่ต้องคอมไพล์ใหม่ หรือสั่ง build พร้อมสร้างภาพในขั้นเดียวได้ด้วย:
+
+```sh
+npm run generate -- --user guatom999 --output dist
+```
+
+ถ้าใช้ PowerShell บน Windows ให้ใช้ `npm.cmd run generate -- --user guatom999 --output dist` เพื่อส่ง options ผ่าน npm ได้ครบ หรือใช้คำสั่ง `node build/bin/greenlantern.js` ด้านบนโดยตรง
 
 | ไฟล์ | ใช้ทำอะไร |
 | --- | --- |
@@ -83,6 +93,7 @@ Action นี้สร้างไฟล์เท่านั้น ส่วน
 ## ตัวอย่างออฟไลน์และทดสอบ
 
 ```sh
+npm run typecheck
 npm run demo
 npm test
 ```
@@ -92,10 +103,14 @@ npm test
 ใช้ fixture ของคุณเองได้ โดยให้ JSON มี `days` เป็น array ของ `{ "date": "2026-10-24", "level": 4 }` และอาจมี `count` จำนวนเต็มที่ไม่ติดลบ ต้องครอบคลุมอย่างน้อย 5 สัปดาห์เพื่อวางสัญลักษณ์ได้
 
 ```sh
-node bin/greenlantern.js --user demo --fixture fixtures/demo.json --output examples
+npm run generate -- --user demo --fixture fixtures/demo.json --output examples
 ```
 
-อ่าน [โครงสร้างและการแกะ snk](docs/how-it-works.md) หรือ import `normalizeDays`, `fetchContributions`, `sampleFrame`, `renderSvg` จาก `src/index.js` เพื่อใช้ต่อ รองรับ SVG ในรุ่นนี้ ส่วน GIF/MP4 ยังไม่รวมอยู่
+อ่าน [flow พร้อมหน้าที่ของแต่ละไฟล์](docs/project-flow.md) หรือ [โครงสร้างและการแกะ snk](docs/how-it-works.md) เพื่อเริ่มทำความเข้าใจโค้ด
+
+ซอร์สของ library อยู่ที่ `src/index.ts` และคอมไพล์เป็น `build/src/index.js` พร้อม type declarations สามารถ import `normalizeDays`, `fetchContributions`, `sampleFrame`, `renderSvg` ไปใช้ต่อได้ รองรับ SVG ในรุ่นนี้ ส่วน GIF/MP4 ยังไม่รวมอยู่
+
+ในไฟล์ `.ts` จะเห็น import ที่ลงท้าย `.js` เพราะใช้ `NodeNext`: TypeScript จับคู่กับไฟล์ซอร์ส `.ts` และเก็บชื่อ `.js` ไว้ให้ Node รันไฟล์ที่คอมไพล์แล้วได้โดยตรง
 
 ## Credits
 

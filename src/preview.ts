@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { escapeXml } from './svg.js';
+import type { PreviewOptions } from './types.js';
 
 // Assets are kept readable in source, then embedded for a portable HTML file.
 const styles = readFileSync(new URL('./preview/styles.css', import.meta.url), 'utf8');
 const playerScript = readFileSync(new URL('./preview/player.js', import.meta.url), 'utf8');
 
 /** User data appears only as escaped text, never inside the player script. */
-export function renderPreview({ light, dark, closeup, metadata }) {
+export function renderPreview({ light, dark, closeup, metadata }: PreviewOptions): string {
   const username = escapeXml(metadata.username);
   const isFixture = metadata.source === 'fixture';
   const sourceTitle = isFixture
