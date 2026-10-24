@@ -2,16 +2,16 @@
 import { parseArgs } from 'node:util';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { normalizeDays, fetchContributions, validateUsername, renderSvg } from '../src/index.js';
-import { renderPreview } from '../src/preview.js';
-import { isRecord } from '../src/validation.js';
-import type { CalendarGrid, CalendarMetadata, ContributionDay, ContributionSource } from '../src/types.js';
+import { normalizeDays, fetchContributions, validateUsername, renderSvg } from './index.js';
+import { renderPreview } from './preview.js';
+import { isRecord } from './validation.js';
+import type { CalendarGrid, CalendarMetadata, ContributionDay, ContributionSource } from './types.js';
 
 const HELP = `GitHub Green Lantern — a seven-row contribution animation
 
 Usage:
   github-greenlantern --user USERNAME [--output dist]
-  github-greenlantern --user demo --fixture fixtures/demo.json --output examples
+  github-greenlantern --user demo --fixture test/fixtures/demo.json --output dist/demo
 
 Options:
   --user       GitHub username (required)

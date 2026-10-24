@@ -19,7 +19,7 @@ git clone https://github.com/guatom999/github-greenlantern.git
 cd github-greenlantern
 npm ci
 npm run build
-node build/bin/greenlantern.js --user guatom999 --output dist
+node build/src/cli.js --user guatom999 --output dist
 ```
 
 เปิด `dist/preview.html` เพื่อเล่น หยุด และลากดูแต่ละช่วงของแอนิเมชัน เปลี่ยน `--user` เป็น GitHub username ใดก็ได้
@@ -30,7 +30,7 @@ node build/bin/greenlantern.js --user guatom999 --output dist
 npm run generate -- --user guatom999 --output dist
 ```
 
-ถ้าใช้ PowerShell บน Windows ให้ใช้ `npm.cmd run generate -- --user guatom999 --output dist` เพื่อส่ง options ผ่าน npm ได้ครบ หรือใช้คำสั่ง `node build/bin/greenlantern.js` ด้านบนโดยตรง
+ถ้าใช้ PowerShell บน Windows ให้ใช้ `npm.cmd run generate -- --user guatom999 --output dist` เพื่อส่ง options ผ่าน npm ได้ครบ หรือใช้คำสั่ง `node build/src/cli.js` ด้านบนโดยตรง
 
 | ไฟล์ | ใช้ทำอะไร |
 | --- | --- |
@@ -98,19 +98,30 @@ npm run demo
 npm test
 ```
 
-เปิด `examples/preview.html` ได้ทันที ตัวอย่างใน `fixtures/demo.json` และ `examples/` เป็น **ข้อมูลจำลอง** ไม่ใช่สถิติของผู้ใช้จริง ส่วนคำสั่ง `--user guatom999` ที่ไม่ระบุ `--fixture` จะอ่านข้อมูลจริงจาก GitHub
+หลังรัน `npm run demo` ให้เปิด `dist/demo/preview.html` ข้อมูลใน `test/fixtures/demo.json` เป็น **ข้อมูลจำลอง** สำหรับดูเอฟเฟกต์ ส่วนคำสั่ง `--user guatom999` ที่ไม่ระบุ `--fixture` จะอ่านข้อมูลจริงจาก GitHub ไฟล์ที่สร้างทั้งหมดอยู่ใน `dist/` ซึ่งไม่ถูก commit
 
 ใช้ fixture ของคุณเองได้ โดยให้ JSON มี `days` เป็น array ของ `{ "date": "2026-10-24", "level": 4 }` และอาจมี `count` จำนวนเต็มที่ไม่ติดลบ ต้องครอบคลุมอย่างน้อย 5 สัปดาห์เพื่อวางสัญลักษณ์ได้
 
 ```sh
-npm run generate -- --user demo --fixture fixtures/demo.json --output examples
+npm run generate -- --user demo --fixture test/fixtures/demo.json --output dist/demo
 ```
 
-อ่าน [flow พร้อมหน้าที่ของแต่ละไฟล์](docs/project-flow.md) หรือ [โครงสร้างและการแกะ snk](docs/how-it-works.md) เพื่อเริ่มทำความเข้าใจโค้ด
+## โครงสร้างโค้ด
+
+```text
+.github/workflows/   ทดสอบ สร้างภาพ และเผยแพร่ไป branch output
+src/                ซอร์ส TypeScript และไฟล์ของหน้า preview
+test/               ชุดทดสอบและข้อมูล demo ใน fixtures/
+action.yml          จุดเรียกใช้เป็น GitHub Action
+```
+
+Flow หลัก: `src/cli.ts` รับ options → `github.ts` อ่าน contribution (หรืออ่าน JSON เมื่อระบุ `--fixture`) → `calendar.ts` จัดเป็นกริด 7 แถว → `svg.ts` สร้างภาพด้วย keyframes จาก `animation.ts` → `preview.ts` สร้างหน้าเล่นและลากเวลา
+
+SVG มี CSS animation อยู่ในไฟล์ ส่วนหน้า preview ฝัง CSS และ player ไว้ครบจึงเปิดออฟไลน์ได้ การสร้างภาพกับการเผยแพร่แยกกัน: `action.yml` สร้างไฟล์ แล้ว job `publish` ใน workflow นำไปอัปเดต branch `output`
 
 ซอร์สของ library อยู่ที่ `src/index.ts` และคอมไพล์เป็น `build/src/index.js` พร้อม type declarations สามารถ import `normalizeDays`, `fetchContributions`, `sampleFrame`, `renderSvg` ไปใช้ต่อได้ รองรับ SVG ในรุ่นนี้ ส่วน GIF/MP4 ยังไม่รวมอยู่
 
-ในไฟล์ `.ts` จะเห็น import ที่ลงท้าย `.js` เพราะใช้ `NodeNext`: TypeScript จับคู่กับไฟล์ซอร์ส `.ts` และเก็บชื่อ `.js` ไว้ให้ Node รันไฟล์ที่คอมไพล์แล้วได้โดยตรง
+`build/` เก็บ JavaScript ที่คอมไพล์แล้ว ส่วน `dist/` เก็บ SVG/HTML/JSON ที่สร้าง ทั้งสองโฟลเดอร์และ `node_modules/` ถูก ignore ใน Git ในไฟล์ `.ts` จะเห็น import ที่ลงท้าย `.js` ตามรูปแบบ `NodeNext` เพื่อให้ Node รันไฟล์หลังคอมไพล์ได้โดยตรง
 
 ## Credits
 

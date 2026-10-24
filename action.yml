@@ -49,7 +49,7 @@ runs:
       run: |
         set -euo pipefail
         cd "$GITHUB_WORKSPACE"
-        node "$GREENLANTERN_ACTION_PATH/build/bin/greenlantern.js" --user "$GREENLANTERN_USER" --output "$GREENLANTERN_OUTPUT"
+        node "$GREENLANTERN_ACTION_PATH/build/src/cli.js" --user "$GREENLANTERN_USER" --output "$GREENLANTERN_OUTPUT"
         node --input-type=module -e '
           import { appendFileSync } from "node:fs";
           import { resolve, join } from "node:path";

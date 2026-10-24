@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const cli = fileURLToPath(new URL('../bin/greenlantern.js', import.meta.url));
+const cli = fileURLToPath(new URL('../src/cli.js', import.meta.url));
 const run = (args: string[]) => spawnSync(process.execPath, [cli, ...args], {
   encoding: 'utf8',
   env: { ...process.env, GITHUB_TOKEN: 'do-not-leak-this-token' },
