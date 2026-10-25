@@ -1,4 +1,6 @@
 node_modules/
+build/
+*.tgz
 dist/
 .superpowers/
 .env

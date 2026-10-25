@@ -1,19 +1,27 @@
 // This file is embedded into preview.html, so the viewer works offline.
 const LOOP_DURATION_SECONDS = 16;
 
-const viewer = document.getElementById('viewer');
-const timeSlider = document.getElementById('time');
-const clock = document.getElementById('clock');
-const playButton = document.getElementById('play');
-const themeSelect = document.getElementById('theme');
-const phaseLabels = [...document.querySelectorAll('[data-start]')];
+const viewer = requireElement('viewer', HTMLDivElement);
+const timeSlider = requireElement('time', HTMLInputElement);
+const clock = requireElement('clock', HTMLOutputElement);
+const playButton = requireElement('play', HTMLButtonElement);
+const themeSelect = requireElement('theme', HTMLSelectElement);
+const phaseLabels = [...document.querySelectorAll<HTMLElement>('[data-start]')];
 const prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let isPlaying = !prefersReducedMotion;
 let currentSeconds = 0;
 let previousTimestamp = performance.now();
 
-function syncSvgAnimations() {
+function requireElement<T extends HTMLElement>(id: string, elementType: { new(): T }): T {
+  const element = document.getElementById(id);
+  if (!(element instanceof elementType)) {
+    throw new Error(`Missing or invalid preview element: ${id}`);
+  }
+  return element;
+}
+
+function syncSvgAnimations(): void {
   const animationTimeMs = (currentSeconds % LOOP_DURATION_SECONDS) * 1000;
 
   for (const animation of viewer.getAnimations({ subtree: true })) {
@@ -23,7 +31,7 @@ function syncSvgAnimations() {
   }
 }
 
-function highlightCurrentPhase() {
+function highlightCurrentPhase(): void {
   for (const [index, phase] of phaseLabels.entries()) {
     const startTime = Number(phase.dataset.start);
     const nextPhase = phaseLabels[index + 1];
@@ -34,9 +42,9 @@ function highlightCurrentPhase() {
   }
 }
 
-function updatePlayer() {
+function updatePlayer(): void {
   syncSvgAnimations();
-  timeSlider.value = currentSeconds;
+  timeSlider.value = String(currentSeconds);
   clock.textContent = currentSeconds.toFixed(2) + ' s';
   highlightCurrentPhase();
 }
@@ -55,7 +63,7 @@ playButton.addEventListener('click', () => {
 });
 
 themeSelect.addEventListener('change', () => {
-  for (const variant of viewer.children) {
+  for (const variant of viewer.querySelectorAll<HTMLElement>('.variant')) {
     variant.hidden = variant.dataset.theme !== themeSelect.value;
   }
 
@@ -63,13 +71,13 @@ themeSelect.addEventListener('change', () => {
 });
 
 if (prefersReducedMotion) {
-  document.getElementById('motion').hidden = false;
+  requireElement('motion', HTMLParagraphElement).hidden = false;
   playButton.disabled = true;
   timeSlider.disabled = true;
   playButton.textContent = 'Still';
 }
 
-function tick(timestamp) {
+function tick(timestamp: number): void {
   if (isPlaying) {
     const elapsedSeconds = (timestamp - previousTimestamp) / 1000;
     currentSeconds = (currentSeconds + elapsedSeconds) % LOOP_DURATION_SECONDS;

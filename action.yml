@@ -31,15 +31,25 @@ runs:
       with:
         node-version: '22'
         package-manager-cache: false
+    - name: Build the action
+      shell: bash
+      env:
+        GREENLANTERN_ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        npm ci --prefix "$GREENLANTERN_ACTION_PATH" --ignore-scripts --no-audit --no-fund
+        npm run build --prefix "$GREENLANTERN_ACTION_PATH"
     - id: generate
       shell: bash
       env:
         GREENLANTERN_USER: ${{ inputs.github_user_name }}
         GREENLANTERN_OUTPUT: ${{ inputs.output_directory }}
+        GREENLANTERN_ACTION_PATH: ${{ github.action_path }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         set -euo pipefail
-        node "$GITHUB_ACTION_PATH/bin/greenlantern.js" --user "$GREENLANTERN_USER" --output "$GREENLANTERN_OUTPUT"
+        cd "$GITHUB_WORKSPACE"
+        node "$GREENLANTERN_ACTION_PATH/build/src/cli.js" --user "$GREENLANTERN_USER" --output "$GREENLANTERN_OUTPUT"
         node --input-type=module -e '
           import { appendFileSync } from "node:fs";
           import { resolve, join } from "node:path";

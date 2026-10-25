@@ -3,15 +3,40 @@
   "version": "1.0.0",
   "description": "Turn a seven-row GitHub contribution calendar into a glowing Green Lantern animation.",
   "type": "module",
-  "engines": { "node": ">=22" },
-  "bin": { "github-greenlantern": "bin/greenlantern.js" },
-  "exports": "./src/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "github-greenlantern": "build/src/cli.js"
+  },
+  "main": "./build/src/index.js",
+  "types": "./build/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/src/index.d.ts",
+      "default": "./build/src/index.js"
+    }
+  },
   "scripts": {
-    "test": "node --test",
-    "demo": "node bin/greenlantern.js --user demo --fixture fixtures/demo.json --output examples",
-    "generate": "node bin/greenlantern.js"
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json && node --input-type=module -e \"import { copyFileSync } from 'node:fs'; copyFileSync('src/preview/styles.css', 'build/src/preview/styles.css');\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.browser.json --noEmit",
+    "test": "npm run build && node --test build/test/*.test.js",
+    "demo": "npm run build && node build/src/cli.js --user demo --fixture test/fixtures/demo.json --output dist/demo",
+    "generate": "npm run build && node build/src/cli.js",
+    "prepack": "npm run build"
   },
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/guatom999/github-greenlantern.git" },
-  "files": ["src", "bin", "fixtures", "action.yml", "README.md", "LICENSE"]
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guatom999/github-greenlantern.git"
+  },
+  "files": [
+    "build/src",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^7.0.2"
+  }
 }

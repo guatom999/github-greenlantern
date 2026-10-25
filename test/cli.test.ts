@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const cli = resolve('bin/greenlantern.js');
-const run = args => spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', env: { ...process.env, GITHUB_TOKEN: 'do-not-leak-this-token' }, timeout: 10_000 });
+const cli = fileURLToPath(new URL('../src/cli.js', import.meta.url));
+const run = (args: string[]) => spawnSync(process.execPath, [cli, ...args], {
+  encoding: 'utf8',
+  env: { ...process.env, GITHUB_TOKEN: 'do-not-leak-this-token' },
+  timeout: 10_000,
+});
 
 test('fixture CLI produces real SVG files, provenance and a scrub-enabled preview offline', async t => {
   const root = await mkdtemp(join(tmpdir(), 'greenlantern-'));

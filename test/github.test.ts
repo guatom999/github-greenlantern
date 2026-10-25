@@ -25,6 +25,7 @@ test('uses GraphQL and preserves count and intensity with a token', async () => 
   const result = await fetchContributions('guatom999', { token: 'secret-value', fetchImpl: async (url, options) => {
     assert.equal(url, 'https://api.github.com/graphql');
     assert.equal(options.headers.Authorization, 'Bearer secret-value');
+    assert.ok(options.body);
     assert.equal(JSON.parse(options.body).variables.login, 'guatom999');
     return Response.json(payload);
   } });
@@ -40,13 +41,23 @@ test('validates usernames before making any network request', async () => {
 
 test('reports HTTP errors without disclosing a token or server body', async () => {
   for (const status of [401, 404, 429, 503]) {
-    await assert.rejects(fetchContributions('demo', { token: 'private-token', fetchImpl: async () => new Response('private-token server body', { status }) }), error => error.message.includes(String(status)) && !error.message.includes('private-token'));
+    await assert.rejects(fetchContributions('demo', {
+      token: 'private-token',
+      fetchImpl: async () => new Response('private-token server body', { status }),
+    }), error => error instanceof Error
+      && error.message.includes(String(status))
+      && !error.message.includes('private-token'));
   }
 });
 
 test('rejects GraphQL errors, missing users, malformed JSON and data', async () => {
   for (const body of [{ errors: [{ message: 'private-token' }] }, { data: { user: null } }, { data: {} }, {}, { data: { user: { contributionsCollection: { contributionCalendar: { weeks: [] } } } } }]) {
-    await assert.rejects(fetchContributions('demo', { token: 'private-token', fetchImpl: async () => Response.json(body) }), error => !error.message.includes('private-token') && /GitHub|user|calendar|GraphQL/i.test(error.message));
+    await assert.rejects(fetchContributions('demo', {
+      token: 'private-token',
+      fetchImpl: async () => Response.json(body),
+    }), error => error instanceof Error
+      && !error.message.includes('private-token')
+      && /GitHub|user|calendar|GraphQL/i.test(error.message));
   }
   await assert.rejects(fetchContributions('demo', { token: 'x', fetchImpl: async () => new Response('not json') }), /JSON|response/i);
   const invalid = structuredClone(payload);
@@ -55,6 +66,11 @@ test('rejects GraphQL errors, missing users, malformed JSON and data', async () 
 });
 
 test('turns fetch errors and timeouts into safe actionable errors', async () => {
-  await assert.rejects(fetchContributions('demo', { token: 'secret-value', fetchImpl: async () => { throw new Error('secret-value'); } }), error => /network/i.test(error.message) && !error.message.includes('secret-value'));
+  await assert.rejects(fetchContributions('demo', {
+    token: 'secret-value',
+    fetchImpl: async () => { throw new Error('secret-value'); },
+  }), error => error instanceof Error
+    && /network/i.test(error.message)
+    && !error.message.includes('secret-value'));
   await assert.rejects(fetchContributions('demo', { timeoutMs: 15, fetchImpl: async (_url, { signal }) => new Promise((_resolve, reject) => { signal.addEventListener('abort', () => reject(signal.reason), { once: true }); }) }), /timed out/i);
 });

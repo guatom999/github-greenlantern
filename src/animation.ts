@@ -1,3 +1,5 @@
+import type { CalendarGrid, CellPosition, Keyframe, SampledCell } from './types.js';
+
 export const DURATION = 16;
 export const LOGO = Object.freeze([
   '11111',
@@ -24,13 +26,13 @@ const TIMING = {
   restoreStart: 13,
 };
 
-export function logoCells(width) {
+export function logoCells(width: number): CellPosition[] {
   if (!Number.isInteger(width) || width < LOGO_WIDTH) {
     throw new Error('Grid width must be at least five columns for the logo.');
   }
 
   const left = Math.floor((width - LOGO_WIDTH) / 2);
-  const cells = [];
+  const cells: CellPosition[] = [];
 
   for (const [y, row] of LOGO.entries()) {
     for (const [x, bit] of [...row].entries()) {
@@ -43,7 +45,7 @@ export function logoCells(width) {
   return cells;
 }
 
-export function sourceKeyframes(cell, width) {
+export function sourceKeyframes(cell: CellPosition, width: number): Keyframe[] {
   const center = (width - 1) / 2;
   // Outer columns fade first; rows add a small stagger within each column.
   const distanceFromCenter = Math.abs(cell.x - center);
@@ -61,7 +63,7 @@ export function sourceKeyframes(cell, width) {
   ];
 }
 
-export function logoKeyframes(index) {
+export function logoKeyframes(index: number): Keyframe[] {
   const revealProgress = index / (LOGO_CELL_COUNT - 1);
   const start = TIMING.logoStart + revealProgress * TIMING.logoStagger;
 
@@ -78,7 +80,7 @@ export function logoKeyframes(index) {
   ];
 }
 
-function interpolate(points, time) {
+function interpolate(points: Keyframe[], time: number): number {
   if (!Number.isFinite(time)) {
     throw new Error('Animation time must be finite.');
   }
@@ -101,19 +103,19 @@ function interpolate(points, time) {
       + (endOpacity - startOpacity) * (loopTime - startTime) / (endTime - startTime);
   }
 
-  return points.at(-1)[1];
+  return points[points.length - 1][1];
 }
 
-export function sourceOpacity(cell, width, time) {
+export function sourceOpacity(cell: CellPosition, width: number, time: number): number {
   return interpolate(sourceKeyframes(cell, width), time);
 }
 
-export function logoOpacity(index, time) {
+export function logoOpacity(index: number, time: number): number {
   return interpolate(logoKeyframes(index), time);
 }
 
 /** Useful for alternative renderers and frame-by-frame inspection. */
-export function sampleFrame(grid, time) {
+export function sampleFrame(grid: CalendarGrid, time: number): SampledCell[] {
   const logoIndexByPosition = new Map(
     logoCells(grid.width).map((cell, index) => [`${cell.x},${cell.y}`, index]),
   );

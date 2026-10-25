@@ -12,7 +12,9 @@ on:
     branches: [main]
     paths:
       - src/**
-      - bin/**
+      - package.json
+      - package-lock.json
+      - tsconfig*.json
       - action.yml
       - .github/workflows/generate.yml
 permissions:

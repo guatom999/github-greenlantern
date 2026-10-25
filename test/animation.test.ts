@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeDays } from '../src/calendar.js';
 import { logoCells, sourceOpacity, logoOpacity, sampleFrame } from '../src/animation.js';
+import type { CalendarGrid } from '../src/types.js';
 
 const grid = normalizeDays([{ date: '2026-01-04', level: 4 }, { date: '2026-02-07', level: 2 }]);
 
@@ -33,7 +34,7 @@ test('starts and loops with original contributions and no logo', () => {
 });
 
 test('reveals all 22 logo cells even if every contribution is empty', () => {
-  const empty = { ...grid, cells: grid.cells.map(c => ({ ...c, level: 0 })) };
+  const empty: CalendarGrid = { ...grid, cells: grid.cells.map(c => ({ ...c, level: 0 })) };
   const frame = sampleFrame(empty, 10);
   assert.equal(frame.filter(c => c.logoOpacity === 1).length, 22);
   assert.ok(frame.every(c => c.contributionOpacity === 0));
