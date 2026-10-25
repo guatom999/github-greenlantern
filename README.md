@@ -1,129 +1,160 @@
 # GitHub Green Lantern
 
-เปลี่ยนแสง contribution ตลอดปีให้ค่อย ๆ ดับจากด้านนอก แล้วสว่างเป็น **Green Lantern ตรงกลางกริด 7 แถว** ก่อนวนกลับเป็นปฏิทินเดิม
+**English** | [ภาษาไทย](README.th.md)
+
+Turn your GitHub contribution calendar into a glowing Green Lantern animation for your profile README. The 16-second loop fades the contribution lights inward, reveals the symbol, and restores the original calendar.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/guatom999/github-greenlantern/output/greenlantern-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/guatom999/github-greenlantern/output/greenlantern.svg">
-  <img alt="Contributions fade inward and form a Green Lantern symbol across seven rows" src="https://raw.githubusercontent.com/guatom999/github-greenlantern/output/greenlantern-dark.svg">
+  <img alt="GitHub contributions forming an animated Green Lantern symbol" src="https://raw.githubusercontent.com/guatom999/github-greenlantern/output/greenlantern-dark.svg">
 </picture>
 
-อ่านข้อมูลจริงของ username แล้ววาดกราฟใหม่ จึงได้ไฟล์ **animated SVG** คมชัดสำหรับ README โค้ดเขียนด้วย TypeScript และไม่มี runtime dependency ไม่ต้องติดตั้ง browser เพื่อสร้าง SVG ภาพนี้ไม่เปลี่ยนสถิติ contribution บน GitHub
+[Use on your profile](#use-on-your-profile) · [Run locally](#run-locally) · [Action options](#action-options) · [Development](#development)
 
-## เริ่มใช้ในเครื่อง
+## Use on your profile
 
-ต้องมี **Node.js 22 ขึ้นไป**
+### 1. Add a workflow to your profile repository
+
+Your profile repository must be public and named after your username, for example `guatom999/guatom999`. See [GitHub's profile README guide](https://docs.github.com/en/account-and-profile/how-tos/profile-customization/managing-your-profile-readme).
+
+Create `.github/workflows/greenlantern.yml` in that repository. You can call this Action directly without forking this project:
+
+```yaml
+name: Green Lantern
+
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: greenlantern-output
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Generate animations
+        uses: guatom999/github-greenlantern@v1
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          output_directory: dist
+
+      - name: Publish animations
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+          keep_history: true
+          allow_empty_commit: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The first step creates the images; the second commits them to the `output` branch of **your profile repository**. `keep_history: true` preserves that branch's commit history. The workflow uses GitHub's automatic token; you do not need to create a personal token for this example.
+
+**Version note:** `@v1` currently points to the earlier release, which also creates `greenlantern-logo.svg`, `preview.html`, and `calendar.json`. To use the newer version that generates only the two animated SVGs, replace `@v1` above with `@ad0005c06f35a421edb40355edb42aa9fd73c2fa`. Updating `main` does not automatically move `v1`.
+
+### 2. Run it once
+
+Commit the workflow, then open **Actions → Green Lantern → Run workflow** in your profile repository. Wait for the run to succeed and check that the `output` branch contains the SVGs.
+
+After that, it runs daily at **00:17 UTC / 07:17 Thailand time**. Scheduled runs may start later than the scheduled time.
+
+### 3. Show the animation in your README
+
+Add this HTML to the root `README.md` of your profile repository. Replace **both** occurrences of `YOUR_USERNAME` in each URL with your GitHub username:
+
+```html
+<picture>
+  <source media="(prefers-color-scheme: dark)"
+    srcset="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/greenlantern-dark.svg">
+  <source media="(prefers-color-scheme: light)"
+    srcset="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/greenlantern.svg">
+  <img alt="My GitHub contributions — Green Lantern animation"
+    src="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/greenlantern-dark.svg">
+</picture>
+```
+
+Commit your README and open your GitHub profile. If you publish from a different repository, use that repository's owner and name in the image URLs instead.
+
+## Run locally
+
+Requires **Node.js 22 or later**.
 
 ```sh
 git clone https://github.com/guatom999/github-greenlantern.git
 cd github-greenlantern
 npm ci
 npm run build
-node build/src/cli.js --user guatom999 --output dist
+node build/src/cli.js --user YOUR_USERNAME --output dist
 ```
 
-เปิด `dist/greenlantern.svg` หรือ `dist/greenlantern-dark.svg` ใน browser เพื่อดูแอนิเมชัน เปลี่ยน `--user` เป็น GitHub username ใดก็ได้
+Replace `YOUR_USERNAME`, then open either generated SVG in a browser:
 
-คำสั่ง `build` คอมไพล์ TypeScript ไปที่ `build/` ส่วน `dist/` เก็บไฟล์ภาพที่สร้างแล้ว หลัง build สามารถรัน CLI ซ้ำได้โดยไม่ต้องคอมไพล์ใหม่ หรือสั่ง build พร้อมสร้างภาพในขั้นเดียวได้ด้วย:
+| File | Theme |
+| --- | --- |
+| `dist/greenlantern.svg` | Light |
+| `dist/greenlantern-dark.svg` | Dark |
+
+Each SVG contains its own animation and logo. The current CLI creates only these two files. On a successful rerun, it removes the three retired exports from the output directory and preserves files with other names.
+
+To build and generate in one command:
 
 ```sh
-npm run generate -- --user guatom999 --output dist
+npm run generate -- --user YOUR_USERNAME --output dist
 ```
 
-ถ้าใช้ PowerShell บน Windows ให้ใช้ `npm.cmd run generate -- --user guatom999 --output dist` เพื่อส่ง options ผ่าน npm ได้ครบ หรือใช้คำสั่ง `node build/src/cli.js` ด้านบนโดยตรง
+On Windows PowerShell, use `npm.cmd run generate -- --user YOUR_USERNAME --output dist` to forward the options reliably. The direct `node build/src/cli.js` command above also works.
 
-| ไฟล์ | ใช้ทำอะไร |
-| --- | --- |
-| `greenlantern.svg` | แอนิเมชันธีมสว่าง |
-| `greenlantern-dark.svg` | แอนิเมชันธีมมืด |
+## Action options
 
-สร้างเฉพาะ SVG สองธีมซึ่งมีแอนิเมชันและโลโก้อยู่ในไฟล์ครบ เมื่อรันซ้ำจะลบไฟล์ผลลัพธ์เก่า `greenlantern-logo.svg`, `preview.html` และ `calendar.json` ออกจากโฟลเดอร์ปลายทาง โดยเก็บไฟล์ชื่ออื่นไว้
+| Input | Default | Purpose |
+| --- | --- | --- |
+| `github_user_name` | Repository owner | GitHub account whose contributions to read |
+| `github_token` | `${{ github.token }}` | Read contributions through GitHub GraphQL; pass `''` to use public calendar HTML |
+| `output_directory` | `dist` | Directory receiving the generated files |
 
-ถ้าไม่มี token จะอ่านระดับสี 0–4 จากหน้าปฏิทินสาธารณะ ถ้าตั้ง environment variable `GITHUB_TOKEN` จะใช้ GraphQL และอ่านจำนวน contribution ด้วย ใช้ข้อมูลที่ GitHub อนุญาตให้ token นั้นเห็น ไม่เขียน token ลงไฟล์ผลลัพธ์
+The Action returns file paths through the `svg` and `svg_dark` outputs. It generates files; your workflow handles publishing.
 
-## ใช้บนโปรไฟล์ GitHub
+For the local CLI, `GITHUB_TOKEN` is optional. Without it, the program reads public contribution color levels; with it, it uses GraphQL. It reads only data available to that token and does not write the token into images. The animation does not modify your GitHub contribution statistics.
 
-1. Fork repo นี้ หรือสร้าง repo จากโค้ดนี้ แล้วเปิด GitHub Actions
-2. ที่ **Actions → Generate Green Lantern → Run workflow** ปล่อย username ว่างเพื่อใช้ชื่อเจ้าของ repo หรือระบุชื่ออื่น
-3. Workflow จะสร้างไฟล์ใน branch `output` และอัปเดตทุกวันเวลา **07:17 น. ประเทศไทย** (GitHub อาจเริ่มงานล่าช้าได้)
-4. วางโค้ดนี้ใน README ของโปรไฟล์ แล้วเปลี่ยน `OWNER` และ `REPO` ให้ตรงกับ repo ที่รัน workflow
+To generate images for a different account, set `github_user_name` explicitly. In a fork of this repository, the built-in [generation workflow](.github/workflows/generate.yml) also accepts a username when you run it manually; scheduled runs use the repository owner.
 
-```html
-<picture>
-  <source media="(prefers-color-scheme: dark)"
-    srcset="https://raw.githubusercontent.com/OWNER/REPO/output/greenlantern-dark.svg">
-  <source media="(prefers-color-scheme: light)"
-    srcset="https://raw.githubusercontent.com/OWNER/REPO/output/greenlantern.svg">
-  <img alt="GitHub Green Lantern contribution animation"
-    src="https://raw.githubusercontent.com/OWNER/REPO/output/greenlantern-dark.svg">
-</picture>
-```
+## Development
 
-Repo ที่เก็บภาพควรเป็น public เพื่อให้โปรไฟล์โหลดภาพได้ ไฟล์อัปเดตแล้ว GitHub อาจยังแสดงภาพจาก cache อยู่ชั่วคราว
-
-## ใช้เป็น GitHub Action ใน repo อื่น
-
-```yaml
-permissions:
-  contents: read
-
-steps:
-  - uses: guatom999/github-greenlantern@main
-    with:
-      github_user_name: ${{ github.repository_owner }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
-      output_directory: dist
-```
-
-Action นี้สร้างไฟล์เท่านั้น ส่วนการเผยแพร่ใช้ workflow ของคุณเอง หรือดูตัวอย่าง [.github/workflows/generate.yml](.github/workflows/generate.yml) ที่แยก job สร้างไฟล์กับ job เผยแพร่ และให้ `contents: write` เฉพาะ job เผยแพร่ ควร pin Action เป็น commit SHA เมื่อใช้งานจริง
-
-## ภาพเคลื่อนไหวทำงานอย่างไร
-
-| เวลา | ภาพ |
-| --- | --- |
-| 0–2 วินาที | ปฏิทิน contribution จริง พร้อมความเข้มสีเดิม |
-| 2–8 วินาที | ไฟค่อย ๆ ดับจากขอบซ้ายและขวาเข้ากลาง |
-| 6–10 วินาที | ไฟ 22 ช่องค่อย ๆ สว่างเป็นสัญลักษณ์ |
-| 10–13 วินาที | สัญลักษณ์สว่างครบและเต้นแสงเบา ๆ |
-| 13–16 วินาที | กลับมาเป็นปฏิทินเดิมและวนซ้ำ |
-
-ตัวสัญลักษณ์มีขนาด **5 คอลัมน์ × 7 แถว** ตามภาพอ้างอิง ความกว้างของปฏิทินตามจำนวนสัปดาห์ที่ GitHub ส่งกลับ ไม่บีบทั้งปีเหลือ 52 คอลัมน์ ถ้าเครื่องตั้ง reduced motion จะแสดงปฏิทินแบบภาพนิ่ง
-
-## ตัวอย่างออฟไลน์และทดสอบ
+After `npm ci`:
 
 ```sh
-npm run typecheck
 npm run demo
+npm run typecheck
 npm test
 ```
 
-หลังรัน `npm run demo` ให้เปิด `dist/demo/greenlantern.svg` หรือ `dist/demo/greenlantern-dark.svg` ข้อมูลใน `test/fixtures/demo.json` เป็น **ข้อมูลจำลอง** สำหรับดูเอฟเฟกต์ ส่วนคำสั่ง `--user guatom999` ที่ไม่ระบุ `--fixture` จะอ่านข้อมูลจริงจาก GitHub ไฟล์ที่สร้างทั้งหมดอยู่ใน `dist/` ซึ่งไม่ถูก commit
+`npm run demo` uses synthetic data from `test/fixtures/demo.json`, works offline, and writes SVGs into `dist/demo/`. This data does not represent a real GitHub account.
 
-ใช้ fixture ของคุณเองได้ โดยให้ JSON มี `days` เป็น array ของ `{ "date": "2026-10-24", "level": 4 }` และอาจมี `count` จำนวนเต็มที่ไม่ติดลบ ต้องครอบคลุมอย่างน้อย 5 สัปดาห์เพื่อวางสัญลักษณ์ได้
+| Location | Purpose |
+| --- | --- |
+| `src/cli.ts` | Read options, load data, and write the SVGs |
+| `src/github.ts` | Fetch GitHub contributions |
+| `src/calendar.ts` | Normalize dates into a seven-row grid |
+| `src/animation.ts` | Define the 16-second animation and 5 × 7 symbol |
+| `src/svg.ts` | Render self-contained SVGs |
+| `src/index.ts` | Public library functions and TypeScript types |
+| `test/` | Automated tests and demo data |
+| `.github/workflows/generate.yml` | Generate and publish this repository's images |
 
-```sh
-npm run generate -- --user demo --fixture test/fixtures/demo.json --output dist/demo
-```
+`build/` contains compiled JavaScript and type declarations; `dist/` contains generated SVGs. Both directories and `node_modules/` are ignored by Git. The library exports `normalizeDays`, `fetchContributions`, `sampleFrame`, `renderSvg`, and other helpers through `build/src/index.js`.
 
-## โครงสร้างโค้ด
+The SVG renderer requires no browser or runtime dependencies. It preserves the calendar's week columns, uses seven rows, and displays a still contribution calendar when reduced motion is enabled. GIF and MP4 export are not included.
 
-```text
-.github/workflows/   สร้างภาพและเผยแพร่ไป branch output
-src/                ซอร์ส TypeScript สำหรับอ่านข้อมูลและสร้าง SVG
-test/               ชุดทดสอบและข้อมูล demo ใน fixtures/
-action.yml          จุดเรียกใช้เป็น GitHub Action
-```
+## Credits and license
 
-Flow หลัก: `src/cli.ts` รับ options → `github.ts` อ่าน contribution (หรืออ่าน JSON เมื่อระบุ `--fixture`) → `calendar.ts` จัดเป็นกริด 7 แถว → `svg.ts` สร้างภาพด้วย keyframes จาก `animation.ts` → เขียน SVG สองธีมลงโฟลเดอร์ปลายทาง
+Inspired by [Platane/snk](https://github.com/Platane/snk). This project implements its own data reader, animation timeline, and renderer.
 
-SVG มี CSS animation อยู่ในไฟล์จึงเปิดออฟไลน์ได้ การสร้างภาพกับการเผยแพร่แยกกัน: `action.yml` สร้างไฟล์ แล้ว job `publish` ใน workflow นำ SVG สองธีมไปอัปเดต branch `output` และลบไฟล์ผลลัพธ์เก่าสามไฟล์ออก
-
-ซอร์สของ library อยู่ที่ `src/index.ts` และคอมไพล์เป็น `build/src/index.js` พร้อม type declarations สามารถ import `normalizeDays`, `fetchContributions`, `sampleFrame`, `renderSvg` ไปใช้ต่อได้ รองรับ SVG ในรุ่นนี้ ส่วน GIF/MP4 ยังไม่รวมอยู่
-
-`build/` เก็บ JavaScript ที่คอมไพล์แล้ว ส่วน `dist/` เก็บ SVG ที่สร้าง ทั้งสองโฟลเดอร์และ `node_modules/` ถูก ignore ใน Git ในไฟล์ `.ts` จะเห็น import ที่ลงท้าย `.js` ตามรูปแบบ `NodeNext` เพื่อให้ Node รันไฟล์หลังคอมไพล์ได้โดยตรง
-
-## Credits
-
-ได้แรงบันดาลใจจาก [Platane/snk](https://github.com/Platane/snk) ในการอ่านปฏิทิน contribution แล้วสร้างภาพเคลื่อนไหวสำหรับ README โปรเจกต์นี้เขียนตัวอ่านข้อมูล ลำดับเฟรม และ renderer ใหม่ โดยไม่ใช้ snake solver หรือคัดลอกโค้ดต้นฉบับ
-
-MIT สำหรับโค้ด · โปรเจกต์แฟนเมด ไม่เกี่ยวข้องอย่างเป็นทางการกับเจ้าของชื่อหรือสัญลักษณ์ Green Lantern
+Code is licensed under [MIT](LICENSE). This is a fan project, unaffiliated with the owners of the Green Lantern name or symbol.
