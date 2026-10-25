@@ -22,7 +22,7 @@ npm run build
 node build/src/cli.js --user guatom999 --output dist
 ```
 
-เปิด `dist/preview.html` เพื่อเล่น หยุด และลากดูแต่ละช่วงของแอนิเมชัน เปลี่ยน `--user` เป็น GitHub username ใดก็ได้
+เปิด `dist/greenlantern.svg` หรือ `dist/greenlantern-dark.svg` ใน browser เพื่อดูแอนิเมชัน เปลี่ยน `--user` เป็น GitHub username ใดก็ได้
 
 คำสั่ง `build` คอมไพล์ TypeScript ไปที่ `build/` ส่วน `dist/` เก็บไฟล์ภาพที่สร้างแล้ว หลัง build สามารถรัน CLI ซ้ำได้โดยไม่ต้องคอมไพล์ใหม่ หรือสั่ง build พร้อมสร้างภาพในขั้นเดียวได้ด้วย:
 
@@ -36,9 +36,8 @@ npm run generate -- --user guatom999 --output dist
 | --- | --- |
 | `greenlantern.svg` | แอนิเมชันธีมสว่าง |
 | `greenlantern-dark.svg` | แอนิเมชันธีมมืด |
-| `greenlantern-logo.svg` | ภาพนิ่งช่วงที่สัญลักษณ์สว่างครบ |
-| `preview.html` | ดูและลากเวลาใน browser ได้โดยตรง |
-| `calendar.json` | ข้อมูลต้นทางและที่มา สำหรับตรวจสอบหรือสร้างเฟรมต่อ |
+
+สร้างเฉพาะ SVG สองธีมซึ่งมีแอนิเมชันและโลโก้อยู่ในไฟล์ครบ เมื่อรันซ้ำจะลบไฟล์ผลลัพธ์เก่า `greenlantern-logo.svg`, `preview.html` และ `calendar.json` ออกจากโฟลเดอร์ปลายทาง โดยเก็บไฟล์ชื่ออื่นไว้
 
 ถ้าไม่มี token จะอ่านระดับสี 0–4 จากหน้าปฏิทินสาธารณะ ถ้าตั้ง environment variable `GITHUB_TOKEN` จะใช้ GraphQL และอ่านจำนวน contribution ด้วย ใช้ข้อมูลที่ GitHub อนุญาตให้ token นั้นเห็น ไม่เขียน token ลงไฟล์ผลลัพธ์
 
@@ -98,7 +97,7 @@ npm run demo
 npm test
 ```
 
-หลังรัน `npm run demo` ให้เปิด `dist/demo/preview.html` ข้อมูลใน `test/fixtures/demo.json` เป็น **ข้อมูลจำลอง** สำหรับดูเอฟเฟกต์ ส่วนคำสั่ง `--user guatom999` ที่ไม่ระบุ `--fixture` จะอ่านข้อมูลจริงจาก GitHub ไฟล์ที่สร้างทั้งหมดอยู่ใน `dist/` ซึ่งไม่ถูก commit
+หลังรัน `npm run demo` ให้เปิด `dist/demo/greenlantern.svg` หรือ `dist/demo/greenlantern-dark.svg` ข้อมูลใน `test/fixtures/demo.json` เป็น **ข้อมูลจำลอง** สำหรับดูเอฟเฟกต์ ส่วนคำสั่ง `--user guatom999` ที่ไม่ระบุ `--fixture` จะอ่านข้อมูลจริงจาก GitHub ไฟล์ที่สร้างทั้งหมดอยู่ใน `dist/` ซึ่งไม่ถูก commit
 
 ใช้ fixture ของคุณเองได้ โดยให้ JSON มี `days` เป็น array ของ `{ "date": "2026-10-24", "level": 4 }` และอาจมี `count` จำนวนเต็มที่ไม่ติดลบ ต้องครอบคลุมอย่างน้อย 5 สัปดาห์เพื่อวางสัญลักษณ์ได้
 
@@ -110,18 +109,18 @@ npm run generate -- --user demo --fixture test/fixtures/demo.json --output dist/
 
 ```text
 .github/workflows/   สร้างภาพและเผยแพร่ไป branch output
-src/                ซอร์ส TypeScript และไฟล์ของหน้า preview
+src/                ซอร์ส TypeScript สำหรับอ่านข้อมูลและสร้าง SVG
 test/               ชุดทดสอบและข้อมูล demo ใน fixtures/
 action.yml          จุดเรียกใช้เป็น GitHub Action
 ```
 
-Flow หลัก: `src/cli.ts` รับ options → `github.ts` อ่าน contribution (หรืออ่าน JSON เมื่อระบุ `--fixture`) → `calendar.ts` จัดเป็นกริด 7 แถว → `svg.ts` สร้างภาพด้วย keyframes จาก `animation.ts` → `preview.ts` สร้างหน้าเล่นและลากเวลา
+Flow หลัก: `src/cli.ts` รับ options → `github.ts` อ่าน contribution (หรืออ่าน JSON เมื่อระบุ `--fixture`) → `calendar.ts` จัดเป็นกริด 7 แถว → `svg.ts` สร้างภาพด้วย keyframes จาก `animation.ts` → เขียน SVG สองธีมลงโฟลเดอร์ปลายทาง
 
-SVG มี CSS animation อยู่ในไฟล์ ส่วนหน้า preview ฝัง CSS และ player ไว้ครบจึงเปิดออฟไลน์ได้ การสร้างภาพกับการเผยแพร่แยกกัน: `action.yml` สร้างไฟล์ แล้ว job `publish` ใน workflow นำไปอัปเดต branch `output`
+SVG มี CSS animation อยู่ในไฟล์จึงเปิดออฟไลน์ได้ การสร้างภาพกับการเผยแพร่แยกกัน: `action.yml` สร้างไฟล์ แล้ว job `publish` ใน workflow นำ SVG สองธีมไปอัปเดต branch `output` และลบไฟล์ผลลัพธ์เก่าสามไฟล์ออก
 
 ซอร์สของ library อยู่ที่ `src/index.ts` และคอมไพล์เป็น `build/src/index.js` พร้อม type declarations สามารถ import `normalizeDays`, `fetchContributions`, `sampleFrame`, `renderSvg` ไปใช้ต่อได้ รองรับ SVG ในรุ่นนี้ ส่วน GIF/MP4 ยังไม่รวมอยู่
 
-`build/` เก็บ JavaScript ที่คอมไพล์แล้ว ส่วน `dist/` เก็บ SVG/HTML/JSON ที่สร้าง ทั้งสองโฟลเดอร์และ `node_modules/` ถูก ignore ใน Git ในไฟล์ `.ts` จะเห็น import ที่ลงท้าย `.js` ตามรูปแบบ `NodeNext` เพื่อให้ Node รันไฟล์หลังคอมไพล์ได้โดยตรง
+`build/` เก็บ JavaScript ที่คอมไพล์แล้ว ส่วน `dist/` เก็บ SVG ที่สร้าง ทั้งสองโฟลเดอร์และ `node_modules/` ถูก ignore ใน Git ในไฟล์ `.ts` จะเห็น import ที่ลงท้าย `.js` ตามรูปแบบ `NodeNext` เพื่อให้ Node รันไฟล์หลังคอมไพล์ได้โดยตรง
 
 ## Credits
 

@@ -18,6 +18,5 @@
     "noEmitOnError": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["src/preview/player.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

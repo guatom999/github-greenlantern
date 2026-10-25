@@ -18,8 +18,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json && node --input-type=module -e \"import { copyFileSync } from 'node:fs'; copyFileSync('src/preview/styles.css', 'build/src/preview/styles.css');\"",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.browser.json --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test build/test/*.test.js",
     "demo": "npm run build && node build/src/cli.js --user demo --fixture test/fixtures/demo.json --output dist/demo",
     "generate": "npm run build && node build/src/cli.js",

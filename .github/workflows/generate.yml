@@ -68,8 +68,9 @@ jobs:
             git -C "$publication" fetch --quiet origin output
             git -C "$publication" reset --hard FETCH_HEAD
           fi
-          cp generated/greenlantern.svg generated/greenlantern-dark.svg generated/greenlantern-logo.svg generated/preview.html generated/calendar.json "$publication/"
-          git -C "$publication" add greenlantern.svg greenlantern-dark.svg greenlantern-logo.svg preview.html calendar.json
+          cp generated/greenlantern.svg generated/greenlantern-dark.svg "$publication/"
+          git -C "$publication" rm --ignore-unmatch -- greenlantern-logo.svg preview.html calendar.json
+          git -C "$publication" add greenlantern.svg greenlantern-dark.svg
           if ! git -C "$publication" diff --cached --quiet; then
             git -C "$publication" commit --quiet -m 'Update Green Lantern contribution animation'
             git -C "$publication" push origin HEAD:output

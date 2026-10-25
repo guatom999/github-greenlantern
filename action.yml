@@ -14,7 +14,7 @@ inputs:
     required: false
     default: ${{ github.token }}
   output_directory:
-    description: Directory receiving SVGs, preview.html and calendar.json
+    description: Directory receiving the light and dark animated SVGs
     required: false
     default: dist
 outputs:

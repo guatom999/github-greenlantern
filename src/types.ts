@@ -80,10 +80,3 @@ export interface CalendarMetadata {
   dayCount: number;
   days: ContributionDay[];
 }
-
-export interface PreviewOptions {
-  light: string;
-  dark: string;
-  closeup: string;
-  metadata: CalendarMetadata;
-}
