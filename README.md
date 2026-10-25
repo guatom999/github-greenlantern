@@ -109,7 +109,7 @@ npm run generate -- --user demo --fixture test/fixtures/demo.json --output dist/
 ## โครงสร้างโค้ด
 
 ```text
-.github/workflows/   ทดสอบ สร้างภาพ และเผยแพร่ไป branch output
+.github/workflows/   สร้างภาพและเผยแพร่ไป branch output
 src/                ซอร์ส TypeScript และไฟล์ของหน้า preview
 test/               ชุดทดสอบและข้อมูล demo ใน fixtures/
 action.yml          จุดเรียกใช้เป็น GitHub Action
